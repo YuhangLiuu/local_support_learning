@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-12",
+  "timezone": "Asia/Shanghai",
+  "branch": "research/lsl-observability",
+  "baseline_tag": "baseline-lsl-original",
+  "baseline_commit": "fb9d2612fe3b51514f7703f250c3c218883d29f9",
+  "test_commit": "8c8592d",
+  "fix_commits": ["a62ecc9", "e814451", "6445b82"],
+  "environment": {
+    "python": "3.11.15",
+    "torch": "2.14.0+cpu",
+    "transformers": "5.14.0",
+    "torchvision": "0.20.1",
+    "numpy": "2.4.6",
+    "pytest": "9.1.1",
+    "cuda_available": false,
+    "pomegranate_available": false,
+    "loguru_available": false
+  },
+  "pytest": {
+    "command": "python -X utf8 -m pytest tests -q --basetemp=tmp/cpu-audit-final --junitxml=tmp/cpu-audit-final.xml --tb=short",
+    "collected": 65,
+    "passed": 64,
+    "skipped": 1,
+    "failed": 0,
+    "errors": 0,
+    "warnings": 2,
+    "seconds": 26.84,
+    "junit": "tmp/cpu-audit-final.xml",
+    "skip_reason": "pomegranate not installed: real EM fitting not verified"
+  },
+  "four_mode_core_consistency": {
+    "modes": ["baseline", "off", "basic", "extended"],
+    "seeds": [0, 42, 2026],
+    "training_states": [true, false],
+    "adapter_stages": 3,
+    "all_tested_tensors_bitwise_equal": true,
+    "atol": 0,
+    "rtol": 0,
+    "scope": "executed official CPU LoRA/GMM/Qwen decoder kernels in dependency-limited harness; not full HF production model"
+  },
+  "not_validated": [
+    "full repository Qwen2ForCausalLM import/instantiation",
+    "real pomegranate EM and real library checkpoint roundtrip",
+    "GPU/7B/bfloat16/FlashAttention execution and memory behavior",
+    "production train_continual loss/data/evaluator integration",
+    "real multi-rank DDP",
+    "long-run performance and memory stability"
+  ],
+  "conclusion": "CPU core-path gate passed; formal LSL reproduction admission still pending target-environment validation"
+}
