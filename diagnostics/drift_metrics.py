@@ -70,6 +70,9 @@ class DriftTracker:
         arrays, entries = {}, []
         for label, collection in (("first", self.first), ("previous", self.previous)):
             for (probe, fingerprint), (stage, epoch, snapshots) in collection.items():
+                if not snapshots:
+                    entries.append(dict(label=label, probe=probe, fingerprint=fingerprint,
+                                        stage=stage, epoch=epoch, empty=True))
                 for (owner, adapter), snapshot in snapshots.items():
                     fields = {}
                     for name, value in snapshot.items():
@@ -85,14 +88,23 @@ class DriftTracker:
         np.savez_compressed(path, **arrays)
 
     def load(self, path):
+        # Parse and validate into fresh collections. Loading must not combine old
+        # stage metadata with new arrays, or mutate history on a rejected file.
+        first, previous = {}, {}
         with np.load(path, allow_pickle=False) as archive:
             for row in json.loads(str(archive["metadata"])):
-                target = self.first if row["label"] == "first" else self.previous
+                if row["label"] not in {"first", "previous"}:
+                    raise ValueError("invalid probe history collection")
+                target = first if row["label"] == "first" else previous
                 key = (row["probe"], row["fingerprint"])
-                target.setdefault(key, (row["stage"], row.get("epoch"), {}))[2][(row["owner"], row["adapter"])] = {
+                snapshot = target.setdefault(key, (row["stage"], row.get("epoch"), {}))[2]
+                if row.get("empty"):
+                    continue
+                snapshot[(row["owner"], row["adapter"])] = {
                     name: None if field is None else archive[field].copy() for name, field in row["fields"].items()}
-        if len(self.first) > self.max_probes:
+        if len(first) > self.max_probes:
             raise ValueError("saved history exceeds probe budget")
+        self.first, self.previous = first, previous
 
 
 class WindowTracker:
