@@ -87,8 +87,12 @@ class GMMClassifierGPU():
         self.params_vectorized["neg"] = self._vectorize_params(self.neg_gmm)
 
     def predict(self, X):
-        return _diag_gmm_logprob(X, *self.params_vectorized["pos"]) \
-             - _diag_gmm_logprob(X, *self.params_vectorized["neg"])
+        pos = _diag_gmm_logprob(X, *self.params_vectorized["pos"])
+        neg = _diag_gmm_logprob(X, *self.params_vectorized["neg"])
+        observer = getattr(self, "_lsl_diagnostics", None)
+        if observer is not None:
+            observer.gmm_scores(self, X, pos, neg)
+        return pos - neg
 
     @staticmethod
     def _vectorize_params(gmm):
@@ -285,6 +289,9 @@ def fit_layer_gmms(decoder_layer, which: str = "pos", skip_on_fail: bool = False
                 # phases on arrival; is_disabled alone cannot say which of the two fits failed.
                 module._neg_fit_failed = True
         module._pending_x = []  # free before the next layer runs
+        observer = getattr(module, "_lsl_diagnostics", None)
+        if observer is not None:
+            observer.record_fit(module, which)
         del X
     torch.cuda.empty_cache()
 
@@ -357,12 +364,16 @@ def gmm_eval(model, pos_dl, neg_dl, tokenizer, config, pt_tasks_dls=None) -> dic
             module.hit_count = module.token_count = 0
             module.seq_hit_count = module.seq_count = 0
             module.is_hit_rate_tracking = True
-        for cur_mb in tqdm(dataloader, desc=f"gmm_eval {desc}", leave=False):
-            enc = tokenizer(cur_mb["text"], return_tensors="pt", max_length=config.seq_len_train,
-                            padding="longest", padding_side="left", truncation=True,
-                            add_special_tokens=False).to(device)
-            with torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True):
-                base(input_ids=enc.input_ids, attention_mask=enc.attention_mask)
+        from diagnostics.integration import observation_context
+        diagnostic_dataset = (getattr(config, "dataset", "positive") if desc == "pos" else
+                              ("lsl_negatives" if config.use_prepared_negatives_set else "fineweb_edu") if desc == "neg" else desc)
+        with observation_context(base, mode="gmm_eval_" + desc, dataset=diagnostic_dataset):
+            for cur_mb in tqdm(dataloader, desc=f"gmm_eval {desc}", leave=False):
+                enc = tokenizer(cur_mb["text"], return_tensors="pt", max_length=config.seq_len_train,
+                                padding="longest", padding_side="left", truncation=True,
+                                add_special_tokens=False).to(device)
+                with torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True):
+                    base(input_ids=enc.input_ids, attention_mask=enc.attention_mask)
         rates = {n: (m.hit_count / max(m.token_count, 1), m.seq_hit_count / max(m.seq_count, 1)) for n, m in owners}
         for _, module in owners:
             module.is_hit_rate_tracking = False
@@ -377,6 +388,17 @@ def gmm_eval(model, pos_dl, neg_dl, tokenizer, config, pt_tasks_dls=None) -> dic
         for name in out:
             out[name][f"pt_{benchmark}"] = bench_rates[name][0]
             out[name][f"pt_{benchmark}_seq"] = bench_rates[name][1]
+
+    from diagnostics.collector import get_observer
+    observer = get_observer(base)
+    if observer is not None:
+        # Mirror original hit-rate results verbatim, without changing their meaning.
+        for name, rates in out.items():
+            for metric, value in rates.items():
+                observer.writer.write("original_gmm_hit_rates", observer.context or {},
+                                      name, name, metric_name=metric, numerator=value, denominator=None,
+                                      metric_value=value, sample_count=None, aggregation_rule="not_poolable_original_ratio",
+                                      source="original gmm_eval aggregate; original denominator unavailable")
 
     if was_training:
         base.train()

@@ -3,6 +3,9 @@ import torch.multiprocessing as mp
 from transformers import AutoTokenizer, get_wsd_schedule
 from modeling_qwen2 import Qwen2ForCausalLM, apply_conditional_lora_wrapper, add_lora, set_shared_prefix_ids, update_cl_memory, flush_cl_memory, set_cl_accum_on, set_cl_accum_off, set_cl_accum_state, get_cl_accum_state, report_cl_memory, report_compaction, cl_memory_breakdown, save_cl_state, load_cl_state
 from cl_memory import fit_cl_memory, gmm_eval, report_gmm_eval, save_gmms, load_gmms
+from diagnostics.integration import (initialize as initialize_diagnostics, observe_eval,
+    stage_context, dataset_context, save_checkpoint as save_diagnostic_checkpoint,
+    reproduction_stage, reproduction_summary)
 from datasets import load_dataset, concatenate_datasets, DatasetDict
 from torch.utils.data import DataLoader, DistributedSampler
 import time
@@ -294,6 +297,7 @@ def build_dataloaders(config, tokenizer):
 
 @torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True)
 # @torch.compiler.set_stance("force_eager")
+@observe_eval("eval_ppl")
 def ppl_eval(model, tokenizer, test_dl, config, max_length=512, log_prefix="Performance", dataset_name=""):
     """currently assumes a SFT instruct dataset (prompt + answer), masks prompt labels"""
     model.eval()
@@ -523,6 +527,7 @@ class SFTCollate:
 
 
 @torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True)
+@observe_eval("eval_task")
 def task_eval(model, tokenizer, test_dl, config, max_length=2048, log_prefix="Performance", dataset_name=""):
     """Accuracy on a closed-answer QA dataset"""
     model.eval()
@@ -573,6 +578,7 @@ def task_eval(model, tokenizer, test_dl, config, max_length=2048, log_prefix="Pe
 
 
 @torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=True)
+@observe_eval("eval_generation")
 def generative_eval(model, tokenizer, test_dl, config, max_length=2048, max_new_tokens=512, log_prefix="Performance", dataset_name=""):
     """Score a benchmark whose answers must be generated rather than picked from candidates."""
     model.eval()
@@ -720,6 +726,7 @@ def base_model_performance_cache_path(config):
     return os.path.join(config.base_model_performance_cache_dir, f"{model_short}_{tasks_key}{limit_key}.json")
 
 
+@observe_eval("eval_lm_harness")
 def lm_eval_harness(model, tokenizer, tasks, limit=None, is_sample=False, log_prefix="Evaluations", return_dummy=False, use_base_model_performance_cache=False):
     """
     Run evaluation on the specified tasks using the provided model and tokenizer.
@@ -789,6 +796,7 @@ def lm_eval_harness(model, tokenizer, tasks, limit=None, is_sample=False, log_pr
     wandb_log_data = {}
     wrapped_model = None
     for i_task, task in enumerate(tasks):
+        dataset_context(model, task)
         logger.info(f"\n[{task}] Starting evaluation\n")
         task_bs = task_to_batch_size[task]
         task_num_fewshot = task_to_num_fewshot[task]
@@ -987,6 +995,7 @@ def run_continual_learning_evals(model, tokenizer, pretrain_config, dataloaders,
 
         # Note: we do NOT reset model weights between tasks
         tasks = {"current": cl_dataset, "cross": cl_config.eval_datasets}
+        stage_context(raw_model, cl_dataset, task_idx, -1, mode="initial_eval")
         epoch_ppls, epoch_task_evals, epoch_task_evals_total, cross_task_epoch_ppls, cross_task_epoch_evals, epoch_lm_evals, wandb_step = main(cl_config, model, tokenizer, dataloaders, tasks, log_prefix="CL", wandb_step=wandb_step, initial_evaluation_scores=initial_evaluation_scores)
         ppl_results[(task_idx, cl_dataset)] = epoch_ppls
         task_eval_results[(task_idx, cl_dataset)] = epoch_task_evals
@@ -996,6 +1005,9 @@ def run_continual_learning_evals(model, tokenizer, pretrain_config, dataloaders,
         for cross_ds, cross_task_evals in cross_task_epoch_evals.items():
             task_eval_results[(task_idx, cross_ds)] = cross_task_evals
         lm_eval_results[task_idx] = epoch_lm_evals
+        reproduction_stage(raw_model, task_idx, cl_dataset, dict(
+            task_scores=epoch_task_evals, ppls=epoch_ppls, lm_eval=epoch_lm_evals,
+            cross_task_scores=cross_task_epoch_evals, cross_ppls=cross_task_epoch_ppls))
 
         # Collect this phase's final-epoch scores so the next phase can reuse them as its zero-shot eval.
         initial_evaluation_scores = {
@@ -1007,6 +1019,7 @@ def run_continual_learning_evals(model, tokenizer, pretrain_config, dataloaders,
     if local_rank == 0:
         save_dir = f'./results/{pretrain_config.start_time}_{pretrain_config.wandb_run_name}_best'
         log_continual_learning_eval_summary(continual_learning_datasets, ppl_results, task_eval_results, lm_eval_results, pretrain_ppl, save_dir)
+        reproduction_summary(raw_model, save_dir)
 
 '''
 Training loop code. Can run in two modes:
@@ -1143,6 +1156,7 @@ def main(config, model, tokenizer, dataloaders, tasks, log_prefix="Performance",
     ce_loss = torch.nn.CrossEntropyLoss(reduction='sum')
     current_epoch = 0
     for global_step in range(num_update_steps):
+        stage_context(model, current_task, task_idx, current_epoch)
         optimizer.zero_grad(set_to_none=True)
         train_loss_global_step = 0.0
         aux_loss_global_step = 0.0
@@ -1321,6 +1335,7 @@ def main(config, model, tokenizer, dataloaders, tasks, log_prefix="Performance",
             wandb_step += 1
 
         if epoch_ended:
+            save_diagnostic_checkpoint(model, config, current_task, current_epoch)
             current_epoch = current_epoch + 1
             if config.activate_cl_method and config.flush_cl_memory_after_each_epoch and current_epoch < max_num_epochs:
                 if local_rank == 0:
@@ -1357,6 +1372,7 @@ if __name__ == "__main__":
         with wandb_init(config, local_rank) as run:
             model = load_model(config)
             set_shared_prefix_ids(model, tokenizer) # Cache the chat template's shared prefix on the model (see set_shared_prefix_mask).
+            initialize_diagnostics(model, tokenizer, config)
             # With conditional LoRA the base is frozen and no param requires grad until the
             # first add_lora (in the CL loop), so DDP can't wrap an empty module here. main()
             # re-wraps DDP per task after that task's add_lora, so the new LoRA params land in

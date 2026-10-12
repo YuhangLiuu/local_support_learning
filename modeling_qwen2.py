@@ -348,15 +348,23 @@ class ConditionalLoRALinear(nn.Module):
         '''
         out = self.base(x)
 
+        observer = getattr(self, "_lsl_diagnostics", None)
+        ticket = observer.begin(self, x, out) if observer is not None else None
+
         if not self.is_cl_lora:  # plain LoRA: every adapter always-active, no gating/buffering
-            for lora_A, lora_B, scaling in zip(self.lora_A, self.lora_B, self.scalings):
-                out = out + scaling * F.linear(F.linear(x, lora_A), lora_B)  # (B,T,D)
+            for i, (lora_A, lora_B, scaling) in enumerate(zip(self.lora_A, self.lora_B, self.scalings)):
+                update = scaling * F.linear(F.linear(x, lora_A), lora_B)
+                out = out + update  # (B,T,D)
+                if ticket is not None:
+                    observer.observe(ticket, i, forced=True, update=update)
             return out
 
         B, T = x.shape[:2]
         flat = x.reshape(B * T, x.shape[-1])  # (B*T, D)
         # bf16 projection is fine - the matmul accumulates in fp32 and JL's own eps dwarfs the input rounding
         flat_jl = flat @ self.jl_P.to(flat.dtype) if self.jl_P is not None else flat  # (B*T, k) or (B*T, D)
+        if ticket is not None:
+            observer.projected(ticket, flat_jl)
         if self.is_cl_accum and self.is_cl_memory_owner: # only owners update the buffer
             if token_pad_mask is not None:
                 keep = token_pad_mask.reshape(B * T).bool()  # (B*T,) True = real token
@@ -366,16 +374,22 @@ class ConditionalLoRALinear(nn.Module):
 
         for i, (lora_A, lora_B, scaling) in enumerate(zip(self.lora_A, self.lora_B, self.scalings)):
             if self.is_disabled[i]:  # this phase's GMM fit failed -> skip it; other phases keep gating
+                if ticket is not None:
+                    observer.observe(ticket, i, disabled=True)
                 continue
             # During training the data is in-distribution -> gate for last lora should be open.
             if self.training and i == self.accum_lora_idx:
-                out = out + scaling * F.linear(F.linear(x, lora_A), lora_B)  # (B,T,D)
+                update = scaling * F.linear(F.linear(x, lora_A), lora_B)
+                out = out + update  # (B,T,D)
+                if ticket is not None:
+                    observer.observe(ticket, i, forced=True, update=update)
                 continue
 
             with torch.no_grad(): # see explanation in function description
                 mask = self.is_in_cl_memory(i, flat_jl)
 
             mask = mask.bool().reshape(B, T)  # [B, T], one decision per token
+            raw_mask = mask if ticket is not None else None
             if not self.training and self.smoothing_alpha < 1.0: # smoothing is applied only during inference - otherwise the data is in-distribution (training)
                 mask = self._temporal_smoothing_filter(mask, i, token_pad_mask) 
             # if self.prefix_mask is not None and mask.shape[1] > 1: # Force the chat template's shared prefix closed
@@ -392,6 +406,8 @@ class ConditionalLoRALinear(nn.Module):
             x_masked = x * mask.unsqueeze(-1).to(x.dtype)  # gate the input: out-of-ball tokens -> 0
             update = scaling * F.linear(F.linear(x_masked, lora_A), lora_B)  # (B,T,D)
             out = out + update
+            if ticket is not None:
+                observer.observe(ticket, i, raw=raw_mask, applied=mask, update=update)
         
         return out
 

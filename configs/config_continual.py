@@ -89,6 +89,15 @@ class Configuration:
     save_cl_state: bool = False        # save the cl state after every epoch's evals
     load_cl_state_path: str = ''
 
+    # Read-only observation; original experiment defaults below remain unchanged.
+    diagnostics_enabled: bool = field(default_factory=lambda: _env_bool('LSL_DIAGNOSTICS', False))
+    diagnostics_level: str = field(default_factory=lambda: os.environ.get('LSL_DIAGNOSTICS_LEVEL', 'basic'))
+    diagnostics_every_n_forwards: int = 100
+    diagnostics_max_batches: int = 4
+    diagnostics_max_tokens: int = 512
+    diagnostics_output_dir: str = ''
+    diagnostics_save_checkpoints: bool = True  # only effective when diagnostics_enabled
+
     # System
     wandb_project: str = 'continual_learning'
     logsdir: str = "./logs"
