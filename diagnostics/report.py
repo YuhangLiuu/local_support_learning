@@ -36,6 +36,17 @@ class RecordWriter:
         self.path.mkdir(parents=True, exist_ok=True)
         self.identity = dict(experiment_id=experiment_id, rank=rank, world_size=world_size,
                              aggregation_scope="rank_local", **(git or git_identity()))
+        # Fail before appending or overwriting metadata from another experiment.
+        # Check every rank: separate ranks still belong to one experiment directory.
+        for target in self.path.glob("metadata.rank*.json"):
+            saved = json.loads(target.read_text(encoding="utf-8"))
+            if saved.get("experiment_id") != experiment_id:
+                raise ValueError(f"output directory belongs to another experiment: {target}")
+        for target in self.path.glob("*.rank*.jsonl"):
+            with target.open(encoding="utf-8") as stream:
+                first = next((line for line in stream if line.strip()), None)
+            if first is not None and json.loads(first).get("experiment_id") != experiment_id:
+                raise ValueError(f"output directory belongs to another experiment: {target}")
 
     def metadata(self, data):
         target = self.path / f"metadata.rank{self.identity['rank']}.json"
@@ -66,10 +77,13 @@ def pool_records(records):
     Histograms/correlation records remain local; only sum/count records pool here.
     """
     keys = ("experiment_id", "git_commit", "dataset", "stage", "epoch", "mode", "window",
-            "module", "owner", "layer_id", "adapter_id", "metric_name", "peer_module", "peer_adapter_id", "statistic_scope")
+            "module", "owner", "layer_id", "adapter_id", "metric_name", "peer_module", "peer_adapter_id", "statistic_scope",
+            "git_dirty", "world_size", "probe_fingerprint", "comparison_mode", "reference",
+            "reference_stage", "reference_epoch", "diagnostics_on", "workload")
     grouped = {}
     for r in records:
-        if r.get("aggregation_rule", "").startswith("not_poolable") or any(k in r for k in ("histogram", "correlation_sums", "sample_ids")):
+        if r.get("aggregation_rule", "").startswith("not_poolable") or any(k in r for k in
+                ("histogram", "correlation_sums", "sample_ids", "posterior_sum", "hard_counts", "error_type")):
             raise ValueError("specialized records require their own reducer")
         key = tuple(r.get(k) for k in keys)
         if key not in grouped:
