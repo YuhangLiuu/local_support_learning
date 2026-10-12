@@ -28,8 +28,13 @@ def isolated_state(model):
     rng = (random.getstate(), np.random.get_state(), torch.get_rng_state(),
            torch.cuda.get_rng_state_all() if torch.cuda.is_initialized() else None)
     states = []
+    lists = []
     for m in model.modules():
         if isinstance(m, ConditionalLoRALinear):
+            # Keep the original list objects (siblings alias is_disabled) AND
+            # their contents. Saving just a reference cannot undo append/setitem.
+            for values in (m.is_disabled, m._pending_x):
+                lists.append((values, list(values)))
             states.append((m, dict(
                 _smoothing_state={k: v.clone() for k, v in m._smoothing_state.items()},
                 prefix_mask=m.prefix_mask, smoothing_alpha=m.smoothing_alpha,
@@ -39,12 +44,14 @@ def isolated_state(model):
                 hit_count=m.hit_count, token_count=m.token_count,
                 seq_hit_count=m.seq_hit_count, seq_count=m.seq_count)))
     obs = get_observer(model)
-    obs_state = None if obs is None else (obs.context, obs.calls, obs.sampled)
+    obs_state = None if obs is None else (obs.context, obs.calls, obs.sampled, copy.deepcopy(obs.budgets))
     if obs is not None:
         obs.flush()
     try:
         yield
     finally:
+        for original, contents in lists:
+            original[:] = contents
         for m, state in states:
             for key, value in state.items():
                 setattr(m, key, value)
@@ -54,8 +61,10 @@ def isolated_state(model):
         if rng[3] is not None:
             torch.cuda.set_rng_state_all(rng[3])
         if obs is not None:
-            obs.flush()
-            obs.context, obs.calls, obs.sampled = obs_state
+            try:
+                obs.flush()
+            finally:
+                obs.context, obs.calls, obs.sampled, obs.budgets = obs_state
 
 
 def logits_kl(reference, candidate, valid):
