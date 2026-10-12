@@ -229,6 +229,13 @@ AdamW-step parameters, RNG, EMA and scores for basic/extended train/eval. They a
 check owner dedup, counts, prefix/padding, no graph retention, probe restoration,
 schema and persisted history. This does not validate actual EM or Qwen attention.
 
+Validation on 2026-10-12: **21 passed, 1 skipped** (Pomegranate unavailable).
+All 18 new/modified Python files parse. `git diff --check` passes. Every original
+source blob in the baseline matches the official source commit (only .gitignore
+and PROVENANCE.md differ/add); main has exactly one root commit. Two parser warnings
+come from an unchanged upstream docstring containing an invalid escape sequence.
+No model weights, datasets, environment packages or CUDA workloads were downloaded/run.
+
 Before formal reproduction, all items below must pass:
 
 1. Actual Qwen/FlashAttention baseline vs diagnostics-off vs basic-on, same initial

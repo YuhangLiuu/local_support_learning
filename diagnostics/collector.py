@@ -295,6 +295,12 @@ class DiagnosticsCollector:
                           numerator=int(module.is_disabled[i]), denominator=1,
                           negative_fit_failed=getattr(module, "_neg_fit_failed", False))
 
+    def record_fit_error(self, module, which, error):
+        name = module._lsl_diagnostic_name
+        self.writer.write("gmm_metrics", {**(self.context or {}), "mode": "fit_" + which},
+                          name, owner_name(name), module.accum_lora_idx, metric_name="fit_exception",
+                          numerator=1, denominator=1, error_type=type(error).__name__, error=str(error))
+
     def close(self):
         self.flush()
         for handle in self.handles:

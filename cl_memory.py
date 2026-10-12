@@ -277,6 +277,9 @@ def fit_layer_gmms(decoder_layer, which: str = "pos", skip_on_fail: bool = False
         try:
             clf.fit_pos(X) if which == "pos" else clf.fit_neg(X)
         except Exception as e:
+            observer = getattr(module, "_lsl_diagnostics", None)
+            if observer is not None:
+                observer.record_fit_error(module, which, e)
             if not skip_on_fail:
                 raise
             logger.warning(f"[fit_cl_memory] L{layer_idx} {name}: {which} fit failed ({e}); disabling this phase's LoRA")
