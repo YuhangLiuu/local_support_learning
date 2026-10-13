@@ -1,0 +1,10 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+WORKDIR /workspace
+COPY reproduction/requirements-gpu.txt /tmp/lsl-gpu-requirements.txt
+RUN python -c "import torch; assert torch.cuda.is_available() is False or torch.version.cuda is not None; assert torch.version.cuda is not None"
+RUN python -m pip install -r /tmp/lsl-gpu-requirements.txt packaging psutil ninja
+ARG FLASH_VERSION=2.8.3
+RUN MAX_JOBS=4 python -m pip install "flash-attn==${FLASH_VERSION}" --no-build-isolation
+RUN python -m nltk.downloader -d /usr/local/share/nltk_data punkt_tab punkt
+RUN python -m pip check && python -m pip freeze > /opt/lsl-gpu-environment.txt

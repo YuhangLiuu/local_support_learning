@@ -1,0 +1,30 @@
+--- a/train_continual.py
++++ b/train_continual.py
+@@ -317,9 +317,12 @@
+         labels = enc["input_ids"].clone()
+         labels[enc["attention_mask"] == 0] = -100  # ignore pads by mask
+         seq_len = labels.shape[1]
++        full_lengths = [len(ids) for ids in tokenizer(batch["text"], add_special_tokens=False)["input_ids"]]
+         for row_i, plen in enumerate(batch["prompt_len"]):  # ignore prompt tokens; score only the answer span
+             pad_offset = int((enc["attention_mask"][row_i] == 0).sum().item())
+-            labels[row_i, :min(pad_offset + plen, seq_len)] = -100
++            removed = max(0, full_lengths[row_i] - (seq_len - pad_offset))
++            kept_prompt = max(0, plen - removed)
++            labels[row_i, :min(pad_offset + kept_prompt, seq_len)] = -100
+         shift_labels = torch.hstack([labels[:,1:],torch.full([labels.shape[0],1], -100, device=labels.device)])
+         num_tokens = (shift_labels != -100).sum().item()
+         total_tokens += num_tokens
+@@ -1175,9 +1178,12 @@
+                 cur_mb_labels[:, :-1] = -100
+             elif cur_mb.get("dataset") in SFT_DATASET_TAGS:                 # SFT: mask each row's prompt span, train on the full answer
+                 seq_len = cur_mb_labels.shape[1]
++                full_lengths = [len(ids) for ids in tokenizer(cur_mb["text"], add_special_tokens=False)["input_ids"]]
+                 for row_i, plen in enumerate(cur_mb["prompt_len"]):
+                     pad_offset = int((cur_mb_attention_mask[row_i] == 0).sum().item())  # left pads precede the (truncated) text
+-                    cur_mb_labels[row_i, :min(pad_offset + plen, seq_len)] = -100
++                    removed = max(0, full_lengths[row_i] - (seq_len - pad_offset))
++                    kept_prompt = max(0, plen - removed)
++                    cur_mb_labels[row_i, :min(pad_offset + kept_prompt, seq_len)] = -100
+             cur_mb_shift_labels = torch.hstack([cur_mb_labels[:,1:],torch.full([cur_mb_labels.shape[0],1], -100, device=cur_mb_labels.device)])
+             num_tokens_in_mb = (cur_mb_shift_labels != -100).sum().item()
+             _seen_tokens_global_step += num_tokens_in_mb

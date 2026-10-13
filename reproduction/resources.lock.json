@@ -1,0 +1,521 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-13T05:06:48.516239+00:00",
+  "cache_root": ".cache/lsl",
+  "resources": [
+    {
+      "kind": "model",
+      "repo_id": "Qwen/Qwen2.5-7B-Instruct",
+      "status": "not_cached",
+      "local_path": ".cache\\lsl\\model\\Qwen--Qwen2.5-7B-Instruct",
+      "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+      "files": [
+        {
+          "name": ".gitattributes",
+          "size": 1519,
+          "sha256": null
+        },
+        {
+          "name": "LICENSE",
+          "size": 11343,
+          "sha256": null
+        },
+        {
+          "name": "README.md",
+          "size": 6240,
+          "sha256": null
+        },
+        {
+          "name": "config.json",
+          "size": 663,
+          "sha256": null
+        },
+        {
+          "name": "generation_config.json",
+          "size": 243,
+          "sha256": null
+        },
+        {
+          "name": "merges.txt",
+          "size": 1671839,
+          "sha256": null
+        },
+        {
+          "name": "model-00001-of-00004.safetensors",
+          "size": 3945441440,
+          "sha256": "a1333e6293854747c481288ea83b348226af178dd565c49b6f9495ba1966aba7"
+        },
+        {
+          "name": "model-00002-of-00004.safetensors",
+          "size": 3864726352,
+          "sha256": "f5d25a2772cb825164a2a2c0fb6d51a87e282abf21e4dd75bc5cfb3cd0ea6185"
+        },
+        {
+          "name": "model-00003-of-00004.safetensors",
+          "size": 3864726424,
+          "sha256": "8efdec4c1bc12317ae1a38dc42b595ce777738a64deea3fcb8a0a91381bcdfd5"
+        },
+        {
+          "name": "model-00004-of-00004.safetensors",
+          "size": 3556377672,
+          "sha256": "1a72d403cdf0c1ec3cb7f289f17b394a01e64394c2e9b3c0f94dbce3faf879bd"
+        },
+        {
+          "name": "model.safetensors.index.json",
+          "size": 27752,
+          "sha256": null
+        },
+        {
+          "name": "tokenizer.json",
+          "size": 7031645,
+          "sha256": null
+        },
+        {
+          "name": "tokenizer_config.json",
+          "size": 7305,
+          "sha256": null
+        },
+        {
+          "name": "vocab.json",
+          "size": 2776833,
+          "sha256": null
+        }
+      ],
+      "gated": false,
+      "total_bytes": 15242807270,
+      "verified_files": [],
+      "integrity": "pending_server_download"
+    },
+    {
+      "kind": "model",
+      "repo_id": "Qwen/Qwen2.5-1.5B-Instruct",
+      "status": "not_cached",
+      "local_path": ".cache\\lsl\\model\\Qwen--Qwen2.5-1.5B-Instruct",
+      "revision": "989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+      "files": [
+        {
+          "name": ".gitattributes",
+          "size": 1519,
+          "sha256": null
+        },
+        {
+          "name": "LICENSE",
+          "size": 11343,
+          "sha256": null
+        },
+        {
+          "name": "README.md",
+          "size": 4917,
+          "sha256": null
+        },
+        {
+          "name": "config.json",
+          "size": 660,
+          "sha256": null
+        },
+        {
+          "name": "generation_config.json",
+          "size": 242,
+          "sha256": null
+        },
+        {
+          "name": "merges.txt",
+          "size": 1671839,
+          "sha256": null
+        },
+        {
+          "name": "model.safetensors",
+          "size": 3087467144,
+          "sha256": "dd924a11b4c220f385b51ffa522daea7c9f3d850e31b162bb5661df483c6d3ee"
+        },
+        {
+          "name": "tokenizer.json",
+          "size": 7031645,
+          "sha256": null
+        },
+        {
+          "name": "tokenizer_config.json",
+          "size": 7305,
+          "sha256": null
+        },
+        {
+          "name": "vocab.json",
+          "size": 2776833,
+          "sha256": null
+        }
+      ],
+      "gated": false,
+      "total_bytes": 3098973447,
+      "verified_files": [],
+      "integrity": "pending_server_download"
+    },
+    {
+      "kind": "dataset",
+      "repo_id": "Tommy0201/igbo_to_english_split",
+      "status": "not_cached",
+      "local_path": ".cache\\lsl\\dataset\\Tommy0201--igbo_to_english_split",
+      "revision": "acbae6a3f7fcf4b44371965db529b587138f9544",
+      "files": [
+        {
+          "name": ".gitattributes",
+          "size": 2307,
+          "sha256": null
+        },
+        {
+          "name": "README.md",
+          "size": 413,
+          "sha256": null
+        },
+        {
+          "name": "data/test-00000-of-00001.parquet",
+          "size": 183490,
+          "sha256": "dee3a73901c6d11075120fbec73b7a16be0d5ae05d45c2919a737551d8754c22"
+        },
+        {
+          "name": "data/train-00000-of-00001.parquet",
+          "size": 17581413,
+          "sha256": "b09269f538018e628aad9c806fa1eb7d70c97b5046cef27b950c0cb3846537ea"
+        }
+      ],
+      "gated": false,
+      "total_bytes": 17767623,
+      "verified_files": [],
+      "integrity": "pending_server_download"
+    },
+    {
+      "kind": "dataset",
+      "repo_id": "AI4Chem/ChemData700K",
+      "status": "not_cached",
+      "local_path": ".cache\\lsl\\dataset\\AI4Chem--ChemData700K",
+      "revision": "3d20c49d03b402f6882ee604971e5bab8559fbcb",
+      "files": [
+        {
+          "name": ".gitattributes",
+          "size": 2307,
+          "sha256": null
+        },
+        {
+          "name": "README.md",
+          "size": 1288,
+          "sha256": null
+        },
+        {
+          "name": "data/train-00000-of-00001.parquet",
+          "size": 268572534,
+          "sha256": "c2ab757b0082c4db37ae9f15c9c7de35a5e59f3dde525f83d94226efcfb82ac2"
+        }
+      ],
+      "gated": false,
+      "total_bytes": 268576129,
+      "verified_files": [],
+      "integrity": "pending_server_download"
+    },
+    {
+      "kind": "dataset",
+      "repo_id": "AI4Chem/ChemBench4K",
+      "status": "not_cached",
+      "local_path": ".cache\\lsl\\dataset\\AI4Chem--ChemBench4K",
+      "revision": "9b8fec19c993c270868e4b8ec1eb580e501bcb22",
+      "files": [
+        {
+          "name": ".gitattributes",
+          "size": 2307,
+          "sha256": null
+        },
+        {
+          "name": "README.md",
+          "size": 3558,
+          "sha256": null
+        },
+        {
+          "name": "dev/Caption2mol_benchmark.json",
+          "size": 3332,
+          "sha256": null
+        },
+        {
+          "name": "dev/Mol2caption_benchmark.json",
+          "size": 3633,
+          "sha256": null
+        },
+        {
+          "name": "dev/Name_Conversion_benchmark.json",
+          "size": 6919,
+          "sha256": null
+        },
+        {
+          "name": "dev/Product_Prediction_benchmark.json",
+          "size": 7326,
+          "sha256": null
+        },
+        {
+          "name": "dev/Property_Prediction_benchmark.json",
+          "size": 1246,
+          "sha256": null
+        },
+        {
+          "name": "dev/Retrosynthesis_benchmark.json",
+          "size": 8890,
+          "sha256": null
+        },
+        {
+          "name": "dev/Solvent_Prediction_benchmark.json",
+          "size": 2850,
+          "sha256": null
+        },
+        {
+          "name": "dev/Temperature_Prediction_benchmark.json",
+          "size": 8818,
+          "sha256": null
+        },
+        {
+          "name": "dev/Yield_Prediction_benchmark.json",
+          "size": 6001,
+          "sha256": null
+        },
+        {
+          "name": "test/Caption2mol_benchmark.json",
+          "size": 534550,
+          "sha256": null
+        },
+        {
+          "name": "test/Mol2caption_benchmark.json",
+          "size": 265617,
+          "sha256": null
+        },
+        {
+          "name": "test/Name_Conversion_benchmark.json",
+          "size": 455709,
+          "sha256": null
+        },
+        {
+          "name": "test/Product_Prediction_benchmark.json",
+          "size": 518588,
+          "sha256": null
+        },
+        {
+          "name": "test/Property_Prediction_benchmark.json",
+          "size": 169153,
+          "sha256": null
+        },
+        {
+          "name": "test/Retrosynthesis_benchmark.json",
+          "size": 583345,
+          "sha256": null
+        },
+        {
+          "name": "test/Solvent_Prediction_benchmark.json",
+          "size": 171862,
+          "sha256": null
+        },
+        {
+          "name": "test/Temperature_Prediction_benchmark.json",
+          "size": 330872,
+          "sha256": null
+        },
+        {
+          "name": "test/Yield_Prediction_benchmark.json",
+          "size": 380730,
+          "sha256": null
+        }
+      ],
+      "gated": false,
+      "total_bytes": 3465306,
+      "verified_files": [],
+      "integrity": "pending_server_download"
+    },
+    {
+      "kind": "dataset",
+      "repo_id": "Trendyol/Trendyol-Cybersecurity-Instruction-Tuning-Dataset",
+      "status": "not_cached",
+      "local_path": ".cache\\lsl\\dataset\\Trendyol--Trendyol-Cybersecurity-Instruction-Tuning-Dataset",
+      "revision": "357544e7576607d88eaeac9b0adb07e9fd8bb2bb",
+      "files": [
+        {
+          "name": ".gitattributes",
+          "size": 2528,
+          "sha256": null
+        },
+        {
+          "name": "CyberSec-Dataset_escaped.jsonl",
+          "size": 195018595,
+          "sha256": "2b08b09c41da22c94507ae7a2e9cbbe6d653e8b0c798ef817e96539b18c78268"
+        },
+        {
+          "name": "README.md",
+          "size": 9708,
+          "sha256": null
+        }
+      ],
+      "gated": false,
+      "total_bytes": 195030831,
+      "verified_files": [],
+      "integrity": "pending_server_download"
+    },
+    {
+      "kind": "dataset",
+      "repo_id": "XuanwuAI/SecEval",
+      "status": "not_cached",
+      "local_path": ".cache\\lsl\\dataset\\XuanwuAI--SecEval",
+      "revision": "205dab7b0888a06f4b53ca7d9c7093e1326683e1",
+      "files": [
+        {
+          "name": ".gitattributes",
+          "size": 2307,
+          "sha256": null
+        },
+        {
+          "name": "README.md",
+          "size": 10856,
+          "sha256": null
+        },
+        {
+          "name": "questions.json",
+          "size": 2316225,
+          "sha256": null
+        }
+      ],
+      "gated": false,
+      "total_bytes": 2329388,
+      "verified_files": [],
+      "integrity": "pending_server_download"
+    },
+    {
+      "kind": "dataset",
+      "repo_id": "assafbk/lsl-negatives-fineweb-edu",
+      "status": "not_cached",
+      "local_path": ".cache\\lsl\\dataset\\assafbk--lsl-negatives-fineweb-edu",
+      "revision": "0a6ae293f81685e7dc8f6c6e5e757fdd7b256738",
+      "files": [
+        {
+          "name": ".gitattributes",
+          "size": 2504,
+          "sha256": null
+        },
+        {
+          "name": "README.md",
+          "size": 701,
+          "sha256": null
+        },
+        {
+          "name": "data/test-00000-of-00001.parquet",
+          "size": 1197867,
+          "sha256": "797c2fd90fbd85688427a6180f4b274e07e4ed19e17b54f364136fc41ea2212e"
+        },
+        {
+          "name": "data/train-00000-of-00001.parquet",
+          "size": 11276082,
+          "sha256": "8c38a56bc9f5b99547b17fd69b79f8526aa3fe79492bd9b5f3383973a3a1dda3"
+        }
+      ],
+      "gated": false,
+      "total_bytes": 12477154,
+      "verified_files": [],
+      "integrity": "pending_server_download"
+    },
+    {
+      "kind": "dataset",
+      "repo_id": "openai/gsm8k",
+      "status": "not_cached",
+      "local_path": ".cache\\lsl\\dataset\\openai--gsm8k",
+      "revision": "740312add88f781978c0658806c59bc2815b9866",
+      "files": [
+        {
+          "name": ".gitattributes",
+          "size": 1610,
+          "sha256": null
+        },
+        {
+          "name": "README.md",
+          "size": 7935,
+          "sha256": null
+        },
+        {
+          "name": "eval.yaml",
+          "size": 920,
+          "sha256": null
+        },
+        {
+          "name": "main/test-00000-of-00001.parquet",
+          "size": 419088,
+          "sha256": "ee7b8da9e381df27b9e3f7758a159ab2bdaa4dbaa910546cbbc47e0cb44e4f59"
+        },
+        {
+          "name": "main/train-00000-of-00001.parquet",
+          "size": 2306545,
+          "sha256": "ea82612ea9582142387730c793eb67d3b12849002bc0b7fa6f8efafa7351419d"
+        },
+        {
+          "name": "socratic/test-00000-of-00001.parquet",
+          "size": 486995,
+          "sha256": "477dba7028204b465491b8f346ec774262ccd77147d942a0881e94cc6da7c99e"
+        },
+        {
+          "name": "socratic/train-00000-of-00001.parquet",
+          "size": 2677259,
+          "sha256": "54eb5fd2105a9126ac6410541b2e9dbe0199701258957c9af02d9ed675c90378"
+        }
+      ],
+      "gated": false,
+      "total_bytes": 5900352,
+      "verified_files": [],
+      "integrity": "pending_server_download"
+    },
+    {
+      "kind": "dataset",
+      "repo_id": "openai/openai_humaneval",
+      "status": "not_cached",
+      "local_path": ".cache\\lsl\\dataset\\openai--openai_humaneval",
+      "revision": "7dce6050a7d6d172f3cc5c32aa97f52fa1a2e544",
+      "files": [
+        {
+          "name": ".gitattributes",
+          "size": 1174,
+          "sha256": null
+        },
+        {
+          "name": "README.md",
+          "size": 6523,
+          "sha256": null
+        },
+        {
+          "name": "openai_humaneval/test-00000-of-00001.parquet",
+          "size": 83920,
+          "sha256": "2f2871a15fbc95b6c683043359f4ed8e144c5a1c4f24f25f66bc51f598dfcfb6"
+        }
+      ],
+      "gated": false,
+      "total_bytes": 91617,
+      "verified_files": [],
+      "integrity": "pending_server_download"
+    },
+    {
+      "kind": "dataset",
+      "repo_id": "google/IFEval",
+      "status": "not_cached",
+      "local_path": ".cache\\lsl\\dataset\\google--IFEval",
+      "revision": "966cd89545d6b6acfd7638bc708b98261ca58e84",
+      "files": [
+        {
+          "name": ".gitattributes",
+          "size": 2307,
+          "sha256": null
+        },
+        {
+          "name": "README.md",
+          "size": 5523,
+          "sha256": null
+        },
+        {
+          "name": "ifeval_input_data.jsonl",
+          "size": 207111,
+          "sha256": null
+        }
+      ],
+      "gated": false,
+      "total_bytes": 214941,
+      "verified_files": [],
+      "integrity": "pending_server_download"
+    }
+  ],
+  "local_cleanup": "User requested no local downloads; project resource tree and 9 generated HF dataset cache directories moved to Windows Recycle Bin after permanent batch deletion was rejected."
+}

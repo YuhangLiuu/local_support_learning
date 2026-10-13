@@ -1,0 +1,32 @@
+{
+  "status": "template_only_no_experiment_results",
+  "provenance": {
+    "git_commit": null,
+    "model_revision": null,
+    "dataset_revisions": {},
+    "environment": null,
+    "diagnostics_level": null,
+    "configuration_signature": null
+  },
+  "table_A_pretraining_retention": {
+    "methods": ["base_qwen2.5", "lora", "lsl"],
+    "columns": ["seed", "gsm8k_flexible_exact_match", "humaneval_pass_at_1", "ifeval_prompt_strict", "raw_mean_score", "code_total_retention"],
+    "rows": [],
+    "retention_definition": "ratio of raw mean scores; distinguish from mean per-task retention; paper aggregation confirmation pending"
+  },
+  "table_B_stage_task_matrix": {
+    "stages": ["base", "after_igbo", "after_chemistry", "after_cybersecurity"],
+    "columns": ["seed", "stage", "igbo_chrf_fraction", "chembench_accuracy", "seceval_mean_set_f1", "pretraining_raw_mean"],
+    "rows": []
+  },
+  "table_C_diagnostics": {
+    "columns": ["experiment_id", "stage", "epoch", "dataset", "layer", "adapter", "owner", "scope", "metric", "numerator", "denominator"],
+    "rows": [],
+    "warning": "Do not pool owner and matrix scopes; use specialized reducers for histograms, correlations and drift references"
+  },
+  "table_D_paper_comparison": {
+    "columns": ["metric", "paper_source", "paper_reported", "reproduced", "absolute_difference", "relative_difference", "n_seeds", "sample_std", "config_exactness"],
+    "rows": [],
+    "warning": "Figure values not digitized; missing paper numbers remain null; never report incomplete runs or placeholder evaluation zeros"
+  }
+}

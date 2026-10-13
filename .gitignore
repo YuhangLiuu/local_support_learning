@@ -33,3 +33,5 @@ datasets/
 *.parquet
 *.arrow
 *.log
+runs/
+.venv-gpu/

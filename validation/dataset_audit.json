@@ -1,0 +1,266 @@
+{
+  "seed": 123,
+  "sample_limit": 0,
+  "tokenizer_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "raw": {
+    "Tommy0201/igbo_to_english_split": {
+      "revision": "acbae6a3f7fcf4b44371965db529b587138f9544",
+      "splits": {
+        "train": {
+          "rows": 116772,
+          "columns": [
+            "igbo",
+            "english"
+          ]
+        },
+        "test": {
+          "rows": 1192,
+          "columns": [
+            "igbo",
+            "english"
+          ]
+        }
+      }
+    },
+    "AI4Chem/ChemData700K": {
+      "revision": "3d20c49d03b402f6882ee604971e5bab8559fbcb",
+      "splits": {
+        "train": {
+          "rows": 726776,
+          "columns": [
+            "input",
+            "history",
+            "instruction",
+            "output"
+          ]
+        }
+      }
+    },
+    "AI4Chem/ChemBench4K": {
+      "revision": "9b8fec19c993c270868e4b8ec1eb580e501bcb22",
+      "splits": {
+        "validation": {
+          "rows": 45,
+          "columns": [
+            "question",
+            "C",
+            "answer",
+            "D",
+            "B",
+            "A"
+          ]
+        },
+        "test": {
+          "rows": 4009,
+          "columns": [
+            "question",
+            "C",
+            "answer",
+            "D",
+            "B",
+            "A"
+          ]
+        }
+      }
+    },
+    "Trendyol/Trendyol-Cybersecurity-Instruction-Tuning-Dataset": {
+      "revision": "357544e7576607d88eaeac9b0adb07e9fd8bb2bb",
+      "splits": {
+        "train": {
+          "rows": 53201,
+          "columns": [
+            "system",
+            "user",
+            "assistant"
+          ]
+        }
+      }
+    },
+    "XuanwuAI/SecEval": {
+      "revision": "205dab7b0888a06f4b53ca7d9c7093e1326683e1",
+      "splits": {
+        "train": {
+          "rows": 2189,
+          "columns": [
+            "id",
+            "source",
+            "question",
+            "choices",
+            "answer",
+            "topics",
+            "keyword"
+          ]
+        }
+      }
+    },
+    "assafbk/lsl-negatives-fineweb-edu": {
+      "revision": "0a6ae293f81685e7dc8f6c6e5e757fdd7b256738",
+      "splits": {
+        "train": {
+          "rows": 3906,
+          "columns": [
+            "text",
+            "id",
+            "dump",
+            "url",
+            "file_path",
+            "language",
+            "language_score",
+            "token_count",
+            "score",
+            "int_score"
+          ]
+        },
+        "test": {
+          "rows": 400,
+          "columns": [
+            "text",
+            "id",
+            "dump",
+            "url",
+            "file_path",
+            "language",
+            "language_score",
+            "token_count",
+            "score",
+            "int_score"
+          ]
+        }
+      }
+    },
+    "openai/gsm8k": {
+      "revision": "740312add88f781978c0658806c59bc2815b9866",
+      "splits": {
+        "train": {
+          "rows": 7473,
+          "columns": [
+            "question",
+            "answer"
+          ]
+        },
+        "test": {
+          "rows": 1319,
+          "columns": [
+            "question",
+            "answer"
+          ]
+        }
+      }
+    },
+    "openai/openai_humaneval": {
+      "revision": "7dce6050a7d6d172f3cc5c32aa97f52fa1a2e544",
+      "splits": {
+        "test": {
+          "rows": 164,
+          "columns": [
+            "task_id",
+            "prompt",
+            "canonical_solution",
+            "test",
+            "entry_point"
+          ]
+        }
+      }
+    },
+    "google/IFEval": {
+      "revision": "966cd89545d6b6acfd7638bc708b98261ca58e84",
+      "splits": {
+        "train": {
+          "rows": 541,
+          "columns": [
+            "key",
+            "prompt",
+            "instruction_id_list",
+            "kwargs"
+          ]
+        }
+      }
+    }
+  },
+  "prepared": {
+    "igbo_translation": {
+      "train_rows": 60000,
+      "test_rows": 1192,
+      "exact_prepared_train_test_overlap": 0,
+      "train_fingerprint": "2819c73f22baebf8",
+      "test_fingerprint": "0b10b790b68a090a",
+      "label_mask": {
+        "scanned": 60000,
+        "left_truncated": 14,
+        "prompt_mask_misaligned": 14,
+        "all_answer_tokens_masked": 2,
+        "lost_answer_tokens": 1416,
+        "empty_prompt": 0,
+        "empty_answer": 0
+      }
+    },
+    "chemdata": {
+      "train_rows": 23709,
+      "test_rows": 1000,
+      "exact_prepared_train_test_overlap": 0,
+      "train_fingerprint": "40b744246300806c",
+      "test_fingerprint": "84bc63ca36f637ca",
+      "label_mask": {
+        "scanned": 23709,
+        "left_truncated": 219,
+        "prompt_mask_misaligned": 219,
+        "all_answer_tokens_masked": 173,
+        "lost_answer_tokens": 8449,
+        "empty_prompt": 20,
+        "empty_answer": 0
+      }
+    },
+    "cybersecurity_ift": {
+      "train_rows": 53883,
+      "test_rows": 1000,
+      "exact_prepared_train_test_overlap": 0,
+      "train_fingerprint": "6132f07ca996d809",
+      "test_fingerprint": "7030a0bcf644c831",
+      "label_mask": {
+        "scanned": 53883,
+        "left_truncated": 0,
+        "prompt_mask_misaligned": 0,
+        "all_answer_tokens_masked": 0,
+        "lost_answer_tokens": 0,
+        "empty_prompt": 1,
+        "empty_answer": 1
+      }
+    },
+    "chembench": {
+      "train_rows": 3709,
+      "test_rows": 300,
+      "exact_prepared_train_test_overlap": 0,
+      "train_fingerprint": "e94952c7ca83abfe",
+      "test_fingerprint": "eff4b81a59ce846f"
+    },
+    "seceval": {
+      "train_rows": 1682,
+      "test_rows": 500,
+      "exact_prepared_train_test_overlap": 0,
+      "train_fingerprint": "d78a837749c9ed3d",
+      "test_fingerprint": "8b5dedb1d6b68c1f"
+    },
+    "igbo_translation_benchmark_version": {
+      "train_rows": 0,
+      "test_rows": 1192,
+      "exact_prepared_train_test_overlap": 0,
+      "train_fingerprint": "6c7c4b07da94bd55",
+      "test_fingerprint": "199a1d96edb3ba41"
+    },
+    "lsl_negatives": {
+      "train_rows": 3506,
+      "test_rows": 400,
+      "exact_prepared_train_test_overlap": 0,
+      "train_fingerprint": "e42b6bdd17201da6",
+      "test_fingerprint": "33cbb60d3fe5f51b"
+    }
+  },
+  "evaluators": {
+    "seceval_set_f1": "synthetic cases passed",
+    "chrf": "perfect pair=100; upstream divides by 100",
+    "chembench": "original rendering/candidate schema exercised in split preparation",
+    "gsm8k_humaneval_ifeval": "datasets loaded; complete generation/scoring harness pending GPU"
+  },
+  "warnings": [],
+  "deterministic_chembench_split": "same seed, same fingerprint"
+}

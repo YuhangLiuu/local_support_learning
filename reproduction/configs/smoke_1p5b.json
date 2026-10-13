@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "name": "smoke_1p5b",
+  "tier": "smoke",
+  "method": "lsl",
+  "task_order": [
+    "igbo_translation"
+  ],
+  "seeds": [
+    123,
+    456,
+    789
+  ],
+  "seed_provenance": "project choices; paper states 3 seeds but does not publish IDs",
+  "overrides": {
+    "model_name": "Qwen/Qwen2.5-1.5B-Instruct",
+    "run_cl_eval": true,
+    "ft_learning_rate": 0.0001,
+    "ft_min_learning_rate": 1e-06,
+    "ft_global_batch_size": 2,
+    "local_batch_size": 1,
+    "eval_batch_size": 1,
+    "ft_warmup_ratio": 0.1,
+    "ft_decay_ratio": 0.1,
+    "ft_stable_ratio": 0.8,
+    "ft_max_num_epochs": 1,
+    "ft_epochs_per_dataset": {
+      "igbo_translation": 1
+    },
+    "seq_len_train": 128,
+    "seq_len_eval": 128,
+    "use_grad_checkpointing": true,
+    "weight_decay": 0.1,
+    "beta1": 0.9,
+    "beta2": 0.95,
+    "grad_clip_norm": 1.0,
+    "activate_cl_method": true,
+    "use_conditional_lora": true,
+    "allocate_lora_per_phase": true,
+    "lora_r": 4,
+    "lora_alpha": 8,
+    "cl_memory_type": "gmm",
+    "activate_jl": true,
+    "jl_k": 8,
+    "flush_cl_memory_after_each_epoch": true,
+    "smoothing_alpha": 0.1,
+    "gmm_n_pos_comps": 2,
+    "gmm_n_neg_comps": 2,
+    "gmm_covariance_type": "diag",
+    "gmm_seed": 0,
+    "gmm_fit_num_tokens": 256,
+    "gmm_skip_on_fail": true,
+    "train_neg_gmm": true,
+    "gmm_neg_path": "",
+    "use_prepared_negatives_set": true,
+    "lm_eval_tasks": [
+      "humaneval",
+      "gsm8k",
+      "ifeval"
+    ],
+    "skip_lm_eval": false,
+    "lm_eval_compute_last_epoch_only": false,
+    "lm_eval_limit": 2,
+    "save_cl_state": false,
+    "load_cl_state_path": "",
+    "wandb_logger": false,
+    "diagnostics_enabled": true,
+    "diagnostics_level": "basic",
+    "diagnostics_every_n_forwards": 1,
+    "diagnostics_max_batches": 2,
+    "diagnostics_max_tokens": 512,
+    "diagnostics_save_checkpoints": true
+  },
+  "data_controls": {
+    "benchmark_eval_cap": 2,
+    "train_cap": 16,
+    "test_cap": 2,
+    "baseline_merge": "upstream_parallel_frozen_adapters",
+    "seceval_split_count": 500
+  },
+  "acknowledged_ambiguities": [
+    "SEED_IDS_UNPUBLISHED",
+    "BENCHMARK_CAP_PARTITION",
+    "UPSTREAM_DATA_CAPS"
+  ],
+  "reference": "arXiv:2610.02126v1 Appendix D Tables 2/3; main Figure 5",
+  "exactness": "reported hyperparameters exact; unpublished details and upstream implementation differences remain explicit"
+}

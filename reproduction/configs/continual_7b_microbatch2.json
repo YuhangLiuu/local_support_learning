@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "name": "continual_7b_microbatch2",
+  "tier": "hardware_adapted",
+  "method": "lsl",
+  "task_order": [
+    "igbo_translation",
+    "chemdata",
+    "cybersecurity_ift"
+  ],
+  "seeds": [
+    123,
+    456,
+    789
+  ],
+  "seed_provenance": "project choices; paper states 3 seeds but does not publish IDs",
+  "overrides": {
+    "model_name": "Qwen/Qwen2.5-7B-Instruct",
+    "run_cl_eval": true,
+    "ft_learning_rate": 0.0001,
+    "ft_min_learning_rate": 1e-06,
+    "ft_global_batch_size": 32,
+    "local_batch_size": 2,
+    "eval_batch_size": 2,
+    "ft_warmup_ratio": 0.1,
+    "ft_decay_ratio": 0.1,
+    "ft_stable_ratio": 0.8,
+    "ft_max_num_epochs": 3,
+    "ft_epochs_per_dataset": {
+      "igbo_translation": 3,
+      "chemdata": 3,
+      "cybersecurity_ift": 1
+    },
+    "seq_len_train": 1024,
+    "seq_len_eval": 1024,
+    "use_grad_checkpointing": true,
+    "weight_decay": 0.1,
+    "beta1": 0.9,
+    "beta2": 0.95,
+    "grad_clip_norm": 1.0,
+    "activate_cl_method": true,
+    "use_conditional_lora": true,
+    "allocate_lora_per_phase": true,
+    "lora_r": 128,
+    "lora_alpha": 256,
+    "cl_memory_type": "gmm",
+    "activate_jl": true,
+    "jl_k": 256,
+    "flush_cl_memory_after_each_epoch": true,
+    "smoothing_alpha": 0.1,
+    "gmm_n_pos_comps": 16,
+    "gmm_n_neg_comps": 32,
+    "gmm_covariance_type": "diag",
+    "gmm_seed": 0,
+    "gmm_fit_num_tokens": 1000000,
+    "gmm_skip_on_fail": true,
+    "train_neg_gmm": true,
+    "gmm_neg_path": "",
+    "use_prepared_negatives_set": true,
+    "lm_eval_tasks": [
+      "humaneval",
+      "gsm8k",
+      "ifeval"
+    ],
+    "skip_lm_eval": false,
+    "lm_eval_compute_last_epoch_only": false,
+    "lm_eval_limit": 300,
+    "save_cl_state": false,
+    "load_cl_state_path": "",
+    "wandb_logger": false,
+    "diagnostics_enabled": true,
+    "diagnostics_level": "basic",
+    "diagnostics_every_n_forwards": 100,
+    "diagnostics_max_batches": 4,
+    "diagnostics_max_tokens": 512,
+    "diagnostics_save_checkpoints": true
+  },
+  "data_controls": {
+    "benchmark_eval_cap": 300,
+    "train_cap": null,
+    "test_cap": null,
+    "baseline_merge": "upstream_parallel_frozen_adapters",
+    "seceval_split_count": 500
+  },
+  "acknowledged_ambiguities": [
+    "SEED_IDS_UNPUBLISHED",
+    "BENCHMARK_CAP_PARTITION",
+    "UPSTREAM_DATA_CAPS"
+  ],
+  "reference": "arXiv:2610.02126v1 Appendix D Tables 2/3; main Figure 5",
+  "exactness": "reported hyperparameters exact; unpublished details and upstream implementation differences remain explicit"
+}
