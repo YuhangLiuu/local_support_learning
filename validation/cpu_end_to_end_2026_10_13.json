@@ -1,0 +1,386 @@
+{
+  "date": "2026-10-13",
+  "timezone": "Asia/Shanghai",
+  "implementation_commit": "bafdafc7c0a868e304a04897670cac7ac8699b40",
+  "baseline_tag": "baseline-lsl-original",
+  "protected_core_tag": "lsl-observability-cpu-validated",
+  "environment": {
+    "python": "3.11.15",
+    "packages": {
+      "torch": "2.9.0+cpu",
+      "transformers": "4.56.2",
+      "pomegranate": "1.1.2",
+      "numpy": "2.4.6",
+      "pytest": "9.1.1",
+      "loguru": "0.7.3",
+      "tokenizers": "0.22.2",
+      "scipy": "1.17.1",
+      "scikit-learn": "1.9.1"
+    },
+    "cuda_available": false,
+    "venv": "../.venv-lsl-cpu"
+  },
+  "pytest": {
+    "tests": 73,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 54.748
+  },
+  "modes": {
+    "baseline": {
+      "stages": [
+        {
+          "stage": 0,
+          "losses": [
+            5.584921360015869,
+            5.604686737060547,
+            5.543598651885986
+          ],
+          "eval_loss": 5.562526702880859,
+          "active_owners": 8,
+          "adapters": 1
+        },
+        {
+          "stage": 1,
+          "losses": [
+            5.607240676879883,
+            5.571570873260498,
+            5.563041687011719
+          ],
+          "eval_loss": 5.560431003570557,
+          "active_owners": 8,
+          "adapters": 2
+        }
+      ],
+      "counts": {
+        "model_forward": 13,
+        "backbone_forward": 16,
+        "fit_pos": 16,
+        "fit_neg": 8,
+        "predict": 300
+      },
+      "references": [
+        {
+          "stage": 0,
+          "adapter": 0,
+          "count": 21,
+          "activation": 15,
+          "raw": 17,
+          "margin": 0.7499807476997375,
+          "update_norm": 0.027155019342899323
+        },
+        {
+          "stage": 1,
+          "adapter": 0,
+          "count": 21,
+          "activation": 15,
+          "raw": 17,
+          "margin": 0.7499807476997375,
+          "update_norm": 0.027155019342899323
+        },
+        {
+          "stage": 1,
+          "adapter": 1,
+          "count": 21,
+          "activation": 9,
+          "raw": 11,
+          "margin": -0.12430531531572342,
+          "update_norm": 0.01693231426179409
+        }
+      ],
+      "independent_probe_counts": {
+        "model_forward": 0,
+        "backbone_forward": 0,
+        "fit_pos": 0,
+        "fit_neg": 0,
+        "predict": 0
+      },
+      "cosine_reference": {
+        "numerator": 0.9397696256637573,
+        "denominator": 9
+      },
+      "vector_vs_pomegranate": {
+        "max_abs": 0.000244140625,
+        "max_rel": 5.222420895734103e-07,
+        "atol": 0.001,
+        "rtol": 1e-05
+      },
+      "minimum_vectorized_covariance": 0.0006384688895195723
+    },
+    "off": {
+      "stages": [
+        {
+          "stage": 0,
+          "losses": [
+            5.584921360015869,
+            5.604686737060547,
+            5.543598651885986
+          ],
+          "eval_loss": 5.562526702880859,
+          "active_owners": 8,
+          "adapters": 1
+        },
+        {
+          "stage": 1,
+          "losses": [
+            5.607240676879883,
+            5.571570873260498,
+            5.563041687011719
+          ],
+          "eval_loss": 5.560431003570557,
+          "active_owners": 8,
+          "adapters": 2
+        }
+      ],
+      "counts": {
+        "model_forward": 13,
+        "backbone_forward": 16,
+        "fit_pos": 16,
+        "fit_neg": 8,
+        "predict": 300
+      },
+      "references": [
+        {
+          "stage": 0,
+          "adapter": 0,
+          "count": 21,
+          "activation": 15,
+          "raw": 17,
+          "margin": 0.7499807476997375,
+          "update_norm": 0.027155019342899323
+        },
+        {
+          "stage": 1,
+          "adapter": 0,
+          "count": 21,
+          "activation": 15,
+          "raw": 17,
+          "margin": 0.7499807476997375,
+          "update_norm": 0.027155019342899323
+        },
+        {
+          "stage": 1,
+          "adapter": 1,
+          "count": 21,
+          "activation": 9,
+          "raw": 11,
+          "margin": -0.12430531531572342,
+          "update_norm": 0.01693231426179409
+        }
+      ],
+      "independent_probe_counts": {
+        "model_forward": 0,
+        "backbone_forward": 0,
+        "fit_pos": 0,
+        "fit_neg": 0,
+        "predict": 0
+      },
+      "cosine_reference": {
+        "numerator": 0.9397696256637573,
+        "denominator": 9
+      },
+      "parity": {
+        "max_abs": 0.0,
+        "max_rel": 0.0,
+        "bitwise": true,
+        "reference": "baseline-lsl-original"
+      },
+      "vector_vs_pomegranate": {
+        "max_abs": 0.000244140625,
+        "max_rel": 5.222420895734103e-07,
+        "atol": 0.001,
+        "rtol": 1e-05
+      },
+      "minimum_vectorized_covariance": 0.0006384688895195723
+    },
+    "basic": {
+      "stages": [
+        {
+          "stage": 0,
+          "losses": [
+            5.584921360015869,
+            5.604686737060547,
+            5.543598651885986
+          ],
+          "eval_loss": 5.562526702880859,
+          "active_owners": 8,
+          "adapters": 1
+        },
+        {
+          "stage": 1,
+          "losses": [
+            5.607240676879883,
+            5.571570873260498,
+            5.563041687011719
+          ],
+          "eval_loss": 5.560431003570557,
+          "active_owners": 8,
+          "adapters": 2
+        }
+      ],
+      "counts": {
+        "model_forward": 13,
+        "backbone_forward": 16,
+        "fit_pos": 16,
+        "fit_neg": 8,
+        "predict": 300
+      },
+      "references": [
+        {
+          "stage": 0,
+          "adapter": 0,
+          "count": 21,
+          "activation": 15,
+          "raw": 17,
+          "margin": 0.7499807476997375,
+          "update_norm": 0.027155019342899323
+        },
+        {
+          "stage": 1,
+          "adapter": 0,
+          "count": 21,
+          "activation": 15,
+          "raw": 17,
+          "margin": 0.7499807476997375,
+          "update_norm": 0.027155019342899323
+        },
+        {
+          "stage": 1,
+          "adapter": 1,
+          "count": 21,
+          "activation": 9,
+          "raw": 11,
+          "margin": -0.12430531531572342,
+          "update_norm": 0.01693231426179409
+        }
+      ],
+      "independent_probe_counts": {
+        "model_forward": 8,
+        "backbone_forward": 8,
+        "fit_pos": 0,
+        "fit_neg": 0,
+        "predict": 98
+      },
+      "cosine_reference": {
+        "numerator": 0.9397696256637573,
+        "denominator": 9
+      },
+      "parity": {
+        "max_abs": 0.0,
+        "max_rel": 0.0,
+        "bitwise": true,
+        "reference": "baseline-lsl-original"
+      },
+      "vector_vs_pomegranate": {
+        "max_abs": 0.000244140625,
+        "max_rel": 5.222420895734103e-07,
+        "atol": 0.001,
+        "rtol": 1e-05
+      },
+      "minimum_vectorized_covariance": 0.0006384688895195723
+    },
+    "extended": {
+      "stages": [
+        {
+          "stage": 0,
+          "losses": [
+            5.584921360015869,
+            5.604686737060547,
+            5.543598651885986
+          ],
+          "eval_loss": 5.562526702880859,
+          "active_owners": 8,
+          "adapters": 1
+        },
+        {
+          "stage": 1,
+          "losses": [
+            5.607240676879883,
+            5.571570873260498,
+            5.563041687011719
+          ],
+          "eval_loss": 5.560431003570557,
+          "active_owners": 8,
+          "adapters": 2
+        }
+      ],
+      "counts": {
+        "model_forward": 13,
+        "backbone_forward": 16,
+        "fit_pos": 16,
+        "fit_neg": 8,
+        "predict": 300
+      },
+      "references": [
+        {
+          "stage": 0,
+          "adapter": 0,
+          "count": 21,
+          "activation": 15,
+          "raw": 17,
+          "margin": 0.7499807476997375,
+          "update_norm": 0.027155019342899323
+        },
+        {
+          "stage": 1,
+          "adapter": 0,
+          "count": 21,
+          "activation": 15,
+          "raw": 17,
+          "margin": 0.7499807476997375,
+          "update_norm": 0.027155019342899323
+        },
+        {
+          "stage": 1,
+          "adapter": 1,
+          "count": 21,
+          "activation": 9,
+          "raw": 11,
+          "margin": -0.12430531531572342,
+          "update_norm": 0.01693231426179409
+        }
+      ],
+      "independent_probe_counts": {
+        "model_forward": 8,
+        "backbone_forward": 8,
+        "fit_pos": 0,
+        "fit_neg": 0,
+        "predict": 98
+      },
+      "cosine_reference": {
+        "numerator": 0.9397696256637573,
+        "denominator": 9
+      },
+      "parity": {
+        "max_abs": 0.0,
+        "max_rel": 0.0,
+        "bitwise": true,
+        "reference": "baseline-lsl-original"
+      },
+      "vector_vs_pomegranate": {
+        "max_abs": 0.000244140625,
+        "max_rel": 5.222420895734103e-07,
+        "atol": 0.001,
+        "rtol": 1e-05
+      },
+      "minimum_vectorized_covariance": 0.0006384688895195723
+    }
+  },
+  "source_sha256": {
+    "tests/tiny_end_to_end_runner.py": "0d9dcc41071a0b03bf60617c43c2f91113e03733cb876702827ff2fb799d870b",
+    "tests/test_full_model_end_to_end.py": "a1263ae11730e30443b20b4ff426cd1ed884e5cae6dc41be04e13dba1f5aa426",
+    "pytest.ini": "2413b3eddaa53af415898f68744d0fba8384b620f2bf7dd85541c5f570c199d4",
+    "modeling_qwen2.py": "349fe7858cc8a4a50d63a07aa5e4674edfa0601968d85f6b16016397d1e71261",
+    "cl_memory.py": "a61ebb2693f98c3d7b454d24d8d33dcc29fd235111dcb95685b1cc1020548256",
+    "configuration_qwen2.py": "48782a9b82bed8e6017fc17353044016c81a77abdaf4507a64efe7357af24391",
+    "diagnostics/collector.py": "2ee1c4d8e55eefa0171f7314a8e454fb40cb466045fd4441758ddb1f04f2f4a4"
+  },
+  "execution_identity": {
+    "git_commit": "badb29cced7d8315c5c7a90cd61a634b55ef589e",
+    "git_dirty": true,
+    "note": "Test files were uncommitted during execution; implementation_commit contains the same tested source bytes."
+  },
+  "scope": "Full random Tiny Qwen2 + actual Pomegranate EM + two stages + CL State restore; CPU FP32/eager only.",
+  "gpu_validation": "not executed"
+}
