@@ -1,0 +1,14 @@
+{
+  "date": "2026-10-13",
+  "scope": "CPU regression and server preparation only",
+  "branch": "research/lsl-observability",
+  "prior_head": "de8d61bcaaf42fc6fe79d764f879f40bffd8a515",
+  "tests": {"passed": 101, "failed": 0, "skipped": 0, "warnings": 3, "seconds": 62.40},
+  "test_command": "python -m pytest -q --basetemp tmp/pytest-gpu-ready-final2 --junitxml=tmp/gpu-ready-tests.xml",
+  "additional_checks": ["pip check passed", "compileall reproduction/scripts passed", "bash -n all shell launchers passed", "git apply --check optional unapplied patch passed", "original core and diagnostics unchanged relative to prior HEAD"],
+  "test_correction": "Initial run: 98 passed, 3 failed due to Windows GBK read_text in new patch tests. Explicit UTF-8 fixed the test; final full regression passed.",
+  "resources": {"local_cache_present": false, "active_prefetch_processes": 0, "manifest_status": "not_cached", "disposition": "Project resource directory and nine generated Hugging Face dataset cache directories moved to Windows Recycle Bin; not permanently erased"},
+  "cpu_environment": {"torch": "2.9.0+cpu", "transformers": "4.56.2", "pomegranate": "1.1.2", "datasets": "4.4.1", "lm_eval": "0.4.10"},
+  "pending": ["Target Linux CUDA environment installation", "Server resource download and integrity validation", "Server full dataset and evaluator audit", "Real GPU Off/Basic/Extended parity", "Formal evaluation equivalence", "7B smoke and peak memory/throughput", "Full-budget EM", "Padded incremental cache validation", "Multi-rank model parity before enabling multiple GPUs"],
+  "conclusion": "Server preparation delivered; CPU validation passed. Not equivalent to real GPU/7B acceptance or permission to bypass launch gates. No formal paper reproduction metrics exist."
+}

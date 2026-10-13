@@ -1,0 +1,20 @@
+# GPU 服务器环境
+
+目标 Linux / Python3.11。setup_gpu_env.sh 创建新 venv，拒绝覆盖。PyTorch2.9.0 CUDA wheel 在 cu126/cu128/cu130 中按驱动、GPU架构、nvcc选择；FlashAttention2.8.3 是未实测候选。requirements-gpu.txt 固定 Transformers4.56.2、Pomegranate1.1.2、lm_eval0.4.10 等；CPU验证不等于 CUDA 环境认证。
+
+原 Dockerfile NVIDIA25.10保持原样；新增 Dockerfile.gpu 要求显式 BASE_IMAGE。不假定所有服务器支持CUDA13。参考 [PyTorch官方版本](https://pytorch.org/get-started/previous-versions/) 和 [FlashAttention官方要求](https://github.com/Dao-AILab/flash-attention)。
+
+```bash
+nvidia-smi
+nvcc --version
+bash scripts/setup_gpu_env.sh --venv .venv-gpu --torch-index https://download.pytorch.org/whl/cu128 --dry-run
+# cu128仅为示例；服务器核对后去掉dry-run安装并激活。
+source .venv-gpu/bin/activate
+python scripts/check_gpu_env.py --config continual_7b_lsl --require-gpu
+```
+
+7B基础7,615,616,512参数，FP32约28.37GiB；rank128三阶段adapter3.61GiB、梯度1.20GiB、Adam2.41GiB，加JL/GMM持久下界约36.42GiB。默认micro32粗估训练/拟合58–82.5GiB，非实测峰值或OOM保证。百万token隐状态13.35GiB；24GiB卡不能容纳原FP32基础权重。优先80GiB级设备再实测；micro2保留global32但拟合峰值仍需测量。Cyber rank512单独估计和smoke。
+
+rank128三阶段CL State单份估计4.71GiB；所有epoch、三种子、两种方法及parity快照应按数百GiB规划。launcher最低60GiB空闲不替代总容量预算。
+
+check_nccl.py只验证通信。原rank-local GMM和sampler行为尚未验证多卡算法等价，正式准备入口目前拒绝nproc>1。未实现ZeRO/FSDP，不能据此承诺小显存多卡可运行。
