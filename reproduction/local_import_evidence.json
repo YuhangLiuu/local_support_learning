@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-10-15T11:09:34.089947+00:00",
+  "resources": [
+    {
+      "repo_id": "Qwen/Qwen2.5-1.5B-Instruct",
+      "revision": "989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
+      "metadata_url": "https://huggingface.co/api/models/Qwen/Qwen2.5-1.5B-Instruct/revision/989aa7980e4cf806f80c7fef2b1adb7bc71aa306?blobs=true",
+      "files": [
+        {
+          "name": "config.json",
+          "size": 660,
+          "git_blob_sha1": "f81ead14ab072d65a07817f83a3ee0e5a1890d10",
+          "sha256": "98d2ff8cc47488d08a2b0b3acf4eb99ef210779b42bd48605f6b8e36acdbf670",
+          "reference_kind": "sha256_of_official_revision_bytes_checked_against_git_blob",
+          "source_url": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct/resolve/989aa7980e4cf806f80c7fef2b1adb7bc71aa306/config.json"
+        },
+        {
+          "name": "generation_config.json",
+          "size": 242,
+          "git_blob_sha1": "dfc11073787daf1b0f9c0f1499487ab5f4c93738",
+          "sha256": "e558847a8b4402616f1273797b015104dc266fe4b520056fca88823ba8f8ebe6",
+          "reference_kind": "sha256_of_official_revision_bytes_checked_against_git_blob",
+          "source_url": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct/resolve/989aa7980e4cf806f80c7fef2b1adb7bc71aa306/generation_config.json"
+        },
+        {
+          "name": "merges.txt",
+          "size": 1671839,
+          "git_blob_sha1": "20024bfe7c83998e9aeaf98a0cd6a2ce6306c2f0",
+          "sha256": "599bab54075088774b1733fde865d5bd747cbcc7a547c5bc12610e874e26f5e3",
+          "reference_kind": "sha256_of_official_revision_bytes_checked_against_git_blob",
+          "source_url": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct/resolve/989aa7980e4cf806f80c7fef2b1adb7bc71aa306/merges.txt"
+        },
+        {
+          "name": "model.safetensors",
+          "size": 3087467144,
+          "git_blob_sha1": "9127f71e7314df0064f469223749e5f237e06463",
+          "sha256": "dd924a11b4c220f385b51ffa522daea7c9f3d850e31b162bb5661df483c6d3ee",
+          "reference_kind": "official_hub_git_lfs_sha256",
+          "source_url": "https://huggingface.co/api/models/Qwen/Qwen2.5-1.5B-Instruct/revision/989aa7980e4cf806f80c7fef2b1adb7bc71aa306?blobs=true"
+        },
+        {
+          "name": "tokenizer.json",
+          "size": 7031645,
+          "git_blob_sha1": "443909a61d429dff23010e5bddd28ff530edda00",
+          "sha256": "c0382117ea329cdf097041132f6d735924b697924d6f6fc3945713e96ce87539",
+          "reference_kind": "sha256_of_official_revision_bytes_checked_against_git_blob",
+          "source_url": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct/resolve/989aa7980e4cf806f80c7fef2b1adb7bc71aa306/tokenizer.json"
+        },
+        {
+          "name": "tokenizer_config.json",
+          "size": 7305,
+          "git_blob_sha1": "07bfe0640cb5a0037f9322287fbfc682806cf672",
+          "sha256": "5b5d4f65d0acd3b2d56a35b56d374a36cbc1c8fa5cf3b3febbbfabf22f359583",
+          "reference_kind": "sha256_of_official_revision_bytes_checked_against_git_blob",
+          "source_url": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct/resolve/989aa7980e4cf806f80c7fef2b1adb7bc71aa306/tokenizer_config.json"
+        },
+        {
+          "name": "vocab.json",
+          "size": 2776833,
+          "git_blob_sha1": "4783fe10ac3adce15ac8f358ef5462739852c569",
+          "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910",
+          "reference_kind": "sha256_of_official_revision_bytes_checked_against_git_blob",
+          "source_url": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct/resolve/989aa7980e4cf806f80c7fef2b1adb7bc71aa306/vocab.json"
+        }
+      ]
+    }
+  ],
+  "note": "Official metadata and small config/tokenizer bodies audited; no weight bytes downloaded. Full weight SHA256 independently confirmed from revision-bound LFS metadata."
+}

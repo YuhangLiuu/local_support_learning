@@ -11,7 +11,7 @@ import platform
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from reproduction.configuration import resolve_cache_root,local_resource,read_plan,resolve,safe_resource_file
-from reproduction.resource_validation import TOKENIZER_PATTERNS,MODEL_PATTERNS,MARKER,selected_files,validate_resource,required_datasets
+from reproduction.resource_validation import TOKENIZER_PATTERNS,MODEL_PATTERNS,MARKER,selected_files,validate_resource,required_datasets,import_local_resource
 SOURCES=[
     ("model","Qwen/Qwen2.5-7B-Instruct"),("model","Qwen/Qwen2.5-1.5B-Instruct"),
     ("dataset","Tommy0201/igbo_to_english_split"),("dataset","AI4Chem/ChemData700K"),
@@ -102,6 +102,9 @@ def main():
     p.add_argument('--manifest',type=Path,default=ROOT/'reproduction/resources.lock.json')
     p.add_argument('--cache-root');p.add_argument('--config',help='select only this plan model (datasets require --datasets)')
     p.add_argument('--check-only',action='store_true',help='validate selected resources without downloading')
+    p.add_argument('--import-local',action='store_true',help='verify existing model content offline and atomically record its actual provenance')
+    p.add_argument('--source',help='actual provider of existing files, e.g. modelscope')
+    p.add_argument('--source-revision',help='optional user-declared source version (not treated as the HF revision)')
     p.add_argument('--inventory',action='store_true');p.add_argument('--models',action='store_true')
     p.add_argument('--tokenizers',action='store_true');p.add_argument('--datasets',action='store_true')
     p.add_argument('--max-gib',type=float,default=40);p.add_argument('--verify-sha256',action='store_true')
@@ -116,9 +119,16 @@ def main():
     chosen=[r for r in manifest['resources'] if (r['kind']=='model' and (args.models or args.tokenizers) and (selected_model is None or r['repo_id']==selected_model)) or (r['kind']=='dataset' and args.datasets and r['repo_id'] in dataset_ids)]
     if not args.config and not args.inventory and (args.models or args.tokenizers or args.datasets):p.error('--config is required to explicitly select experiment resources')
     cache=resolve_cache_root(args.cache_root,manifest)
+    if args.import_local and (not args.config or not args.models or args.datasets or args.tokenizers or args.check_only or args.inventory or not args.source or not args.verify_sha256):
+        p.error('--import-local requires --config --models --source --verify-sha256; cannot combine with datasets/tokenizers/check-only/inventory')
     if args.dry_run:
-        print(json.dumps(dict(resources=[dict(repo_id=r['repo_id'],revision=r['revision'],local_path=str(local_resource(r,args.cache_root,manifest))) for r in chosen],cache_root=str(cache),model_weights=args.models,datasets=args.datasets,max_gib=args.max_gib),indent=2));return
-    if platform.system()!='Linux':p.error('Downloads are server-only by user request; use --dry-run locally')
+        print(json.dumps(dict(resources=[dict(repo_id=r['repo_id'],revision=r['revision'],local_path=str(local_resource(r,args.cache_root,manifest))) for r in chosen],cache_root=str(cache),model_weights=args.models,datasets=args.datasets,max_gib=args.max_gib,action='import_local' if args.import_local else 'check' if args.check_only else 'download',source_provider=args.source),indent=2));return
+    if args.import_local:
+        for item in chosen:
+            try:state=import_local_resource(item,str(cache),manifest,args.source,args.source_revision)
+            except ValueError as error:p.error(str(error))
+            print(json.dumps(state,indent=2))
+        return
     if args.inventory:p.error('repinning is disabled in deployment; preserve the committed revisions')
     if args.relocate:
         # Migrate separators in memory, never persist machine paths in the Git lock.
@@ -128,6 +138,7 @@ def main():
         if not chosen:p.error('select --config and --models/--tokenizers/--datasets for preflight')
         for entry in chosen:print(validate_resource(entry,str(cache),manifest,weights=args.models,verify_hash=args.verify_sha256))
         return
+    if platform.system()!='Linux':p.error('Downloads are server-only by user request; use --dry-run locally')
     if args.models or args.tokenizers or args.datasets:
         download(manifest,args.manifest,args.models,args.tokenizers,args.datasets,args.max_gib,args.verify_sha256,str(cache),{r['repo_id'] for r in chosen})
 
