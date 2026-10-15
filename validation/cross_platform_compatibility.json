@@ -1,0 +1,13 @@
+{
+  "date": "2026-10-15",
+  "scope": "Windows CPU cross-platform engineering verification; no real ROCm execution",
+  "branch": "research/lsl-observability",
+  "tests": {"passed": 144, "failed": 0, "skipped": 0, "warnings": 3, "seconds": 87.81, "prior_tests": 101, "new_tests": 43},
+  "command": "python -m pytest -q --basetemp tmp/pytest-rocm-final2 --junitxml=tmp/rocm-tests.xml",
+  "additional_checks": ["pip check", "compileall reproduction/scripts", "git diff --check", "CPU GPU inventory reports no_gpu without NVIDIA tools"],
+  "preserved": {"resource_revision_and_file_inventory": true, "manifest_schema": 1, "core_algorithm_and_diagnostics_files": "unchanged relative to 44b2119", "paper_experiment_configs": "unchanged", "main_commit": "fb9d2612fe3b51514f7703f250c3c218883d29f9", "baseline_tag_commit": "fb9d2612fe3b51514f7703f250c3c218883d29f9", "cpu_tag_commit": "badb29cced7d8315c5c7a90cd61a634b55ef589e"},
+  "local_side_effects": {"downloaded_models_or_datasets": false, "installed_environment_or_dependencies": false, "model_cache_present": false},
+  "numerical_scope": "Existing baseline/off/basic/extended CPU calculations remain covered. GPU comparison tolerances and rules unchanged.",
+  "simulation_scope": "ROCm/NVIDIA metadata mocked; download failures/retries mocked at Hub call boundary with real temporary files and SHA checks; worker failure uses real child Python process; Windows junction escape checked on filesystem",
+  "pending_server": ["ROCm PyTorch2.12 / Python3.12 actual full-model load", "Pinned 1.5B download and cache preflight", "Off/Basic/Extended GPU numerical parity including EM and state roundtrip", "Evaluator warmup and smoke execution", "Memory/throughput measurements", "Formal 7B and full-budget EM", "Multi-rank model parity before enabling more than one GPU"]
+}

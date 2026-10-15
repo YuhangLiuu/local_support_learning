@@ -1,5 +1,7 @@
 # LSL 复现与同步诊断计划
 
+跨平台与现有AMD环境部署命令见 [AMD_ROCM_DEPLOYMENT.md](AMD_ROCM_DEPLOYMENT.md)；GPU验证仍须在服务器完成。
+
 所有模型/数据准备和正式实验转移到 Linux GPU 服务器。本地不再下载。本轮只增加配置、准备脚本和文档，不修改原始训练、GMM、Gate 或既有 Diagnostics 算法。原 baseline tag、main 与研究分支保留。
 
 顺序：服务器环境与资源验证 → CUDA Off/Basic/Extended 一致性 → 1.5B smoke → 7B smoke → 单任务 → 三阶段 LSL/LoRA 对照。正式配置每个运行123/456/789三个项目指定种子；论文没有公开种子 IDs。

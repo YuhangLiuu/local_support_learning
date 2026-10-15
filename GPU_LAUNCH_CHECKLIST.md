@@ -3,7 +3,8 @@
 只在服务器下载/执行。本地仅 --dry-run。先阅读问题登记；不要通过重做 inventory 静默更新版本。
 
 ```bash
-python scripts/prefetch_resources.py --relocate --cache-root /srv/lsl/resources --models --datasets --verify-sha256 --max-gib 40
+python scripts/prefetch_resources.py --config continual_7b_lsl --relocate --cache-root /srv/lsl/resources --models --datasets --verify-sha256 --max-gib 40
+python scripts/prefetch_resources.py --config smoke_1p5b --cache-root /srv/lsl/resources --models --verify-sha256
 python scripts/verify_datasets.py --cache-root /srv/lsl/resources --sample-limit 0
 python scripts/verify_evaluators.py --cache-root /srv/lsl/resources
 python scripts/check_gpu_env.py --config continual_7b_lsl --cache-root /srv/lsl/resources --require-gpu
