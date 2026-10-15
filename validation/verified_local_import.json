@@ -1,0 +1,13 @@
+{
+  "date": "2026-10-15",
+  "scope": "Offline verified-local-import engineering and CPU regression only",
+  "tests": {"passed": 171, "failed": 0, "skipped": 0, "warnings": 3, "seconds": 76.22, "prior_tests": 144, "new_tests": 27},
+  "command": "python -m pytest -q --basetemp tmp/pytest-local-import-final2 --junitxml=tmp/local-import-tests.xml",
+  "official_evidence": {"repo_id": "Qwen/Qwen2.5-1.5B-Instruct", "revision": "989aa7980e4cf806f80c7fef2b1adb7bc71aa306", "required_files": 7, "weight_bytes": 3087467144, "weight_sha256_source": "independently queried official revision-bound Hugging Face LFS metadata", "other_files": "six official small file bodies read into memory, Git blob SHA1 checked against official revision metadata, SHA256 computed, bodies discarded", "weight_bytes_downloaded": 0},
+  "sidecar": {"schema_version": 2, "type": "verified_local_import", "write": "same-directory temporary file, flush/fsync, atomic os.replace", "source_revision": "unknown unless explicitly declared; declaration not treated as HF revision", "validator": "same existing shared Validator, imported content rehashed even without verify_hash flag", "legacy_hf_sidecar_compatible": true},
+  "unchanged_relative_to": "08431e6",
+  "unchanged": ["modeling_qwen2.py", "cl_memory.py", "train_continual.py", "diagnostics", "reproduction/configs", "reproduction/resources.lock.json", "scripts/gpu_parity_test.py", "main and protected tags"],
+  "local_installations": false,
+  "server_pending": ["actual seven ModelScope files matching the shipped official evidence", "real CUDA 24GB Off/Basic/Extended GPU Parity"],
+  "conclusion": "Server can verify and import existing 1.5B content offline without redownloading weights. No claim of actual server import or GPU parity success."
+}
