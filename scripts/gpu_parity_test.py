@@ -1,4 +1,4 @@
-"""Isolated real-model CUDA Off/Basic/Extended parity; writes a required receipt.
+"""Isolated real-model CUDA/ROCm Off/Basic/Extended parity; writes a required receipt.
 
 Synthetic probes and small EM budgets are explicitly verification workloads,
 not paper experiments. Production Gate/LoRA/GMM/FP32-base paths are reused.
@@ -15,6 +15,15 @@ import sys
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 from reproduction.configuration import read_plan,resolve,resources,local_resource,serialized
 from scripts.run_reproduction import code_hash
+from reproduction.resource_validation import validate_resource
+from reproduction.gpu_environment import gpu_identity,backend
+
+def run_worker(command,log_path,env):
+    with log_path.open('w',encoding='utf-8') as log:
+        result=subprocess.run(command,cwd=ROOT,env=env,stdout=log,stderr=subprocess.STDOUT)
+    if result.returncode:
+        tail='\n'.join(log_path.read_text(encoding='utf-8',errors='replace').splitlines()[-30:])
+        raise RuntimeError(f'Parity worker failed (exit {result.returncode}). Log: {log_path}\n{tail}')
 
 def geometry(config):
     return {k:getattr(config,k) for k in ('activate_cl_method','lora_r','lora_alpha','jl_k','gmm_n_pos_comps','gmm_n_neg_comps',
@@ -28,22 +37,30 @@ def main():
     p.add_argument('--atol',type=float,default=0.);p.add_argument('--rtol',type=float,default=0.);p.add_argument('--tolerance-reason')
     args=p.parse_args();plan=read_plan(args.config);config=resolve(plan,microbatch=1)
     manifest,entries=resources(args.resources);entry=entries[config.model_name]
-    output=Path(args.output).resolve()
+    requested=Path(args.output).resolve()
+    # Keep historical directory outputs and support an explicitly named JSON receipt.
+    receipt_path=requested if requested.suffix.lower()=='.json' else requested/'receipt.json'
+    output=requested.with_suffix('.artifacts') if requested.suffix.lower()=='.json' else requested
     if (args.atol or args.rtol) and not args.tolerance_reason:p.error('nonzero tolerance requires a measured kernel reason')
     if args.dry_run:
         print(json.dumps(dict(model=config.model_name,revision=entry['revision'],geometry=geometry(config),
-            modes=['off','basic','extended'],fit_tokens=args.fit_tokens,training_sequence=32,output=str(output),gpu='Pending'),indent=2));return
+            modes=['off','basic','extended'],fit_tokens=args.fit_tokens,training_sequence=32,output=str(output),receipt=str(receipt_path),model_path=str(local_resource(entry,args.cache_root,manifest)),gpu='Pending'),indent=2));return
+    try:model_path=validate_resource(entry,args.cache_root,manifest)
+    except ValueError as error:p.error(str(error))
+    print(f"Model: {model_path}\nPinned revision: {entry['revision']}",flush=True)
     import torch
-    if not torch.cuda.is_available():p.error('CUDA unavailable; no parity receipt produced')
+    if not torch.cuda.is_available():p.error('GPU unavailable (CUDA/ROCm); no parity receipt produced')
     if not args.worker:
+        if receipt_path.exists():p.error(f'output already exists: {receipt_path}')
         output.mkdir(parents=True,exist_ok=False)
         for mode in ('off','basic','extended'):
             command=[sys.executable,'-X','utf8',str(Path(__file__).resolve()),'--config',args.config,'--resources',args.resources,
                      '--output',str(output),'--fit-tokens',str(args.fit_tokens),'--worker',mode]
             if args.cache_root:command+=['--cache-root',args.cache_root]
-            env={**os.environ,'CUBLAS_WORKSPACE_CONFIG':':4096:8','HF_HUB_OFFLINE':'1','TOKENIZERS_PARALLELISM':'false'}
-            with (output/f'{mode}.log').open('w',encoding='utf-8') as log:
-                subprocess.run(command,cwd=ROOT,env=env,stdout=log,stderr=subprocess.STDOUT,check=True)
+            env={**os.environ,'HF_HUB_OFFLINE':'1','TOKENIZERS_PARALLELISM':'false'}
+            if backend(torch)=='cuda':env['CUBLAS_WORKSPACE_CONFIG']=':4096:8'
+            try:run_worker(command,output/f'{mode}.log',env)
+            except RuntimeError as error:p.exit(1,str(error)+'\n')
         import numpy as np
         reference=torch.load(output/'off.pt',map_location='cpu',weights_only=False)
         errors=dict(max_abs=0.,max_rel=0.,bitwise=True)
@@ -69,12 +86,11 @@ def main():
                 compare(torch.load(output/f'off_stage{stage}.pt',map_location='cpu',weights_only=False,mmap=True),
                         torch.load(output/f'{mode}_stage{stage}.pt',map_location='cpu',weights_only=False,mmap=True))
         receipt=dict(passed=True,core_hash=code_hash(),model_revision=entry['revision'],geometry=geometry(config),
-            environment=dict(torch=torch.__version__,cuda=torch.version.cuda,transformers=metadata.version('transformers'),
-                             flash_attn=metadata.version('flash_attn'),gpu=torch.cuda.get_device_name(),
-                             capability=list(torch.cuda.get_device_capability())),errors=errors,
+            environment=dict(torch=torch.__version__,**gpu_identity(torch),transformers=metadata.version('transformers'),
+                             flash_attn=metadata.version('flash_attn')),errors=errors,
             atol=args.atol,rtol=args.rtol,tolerance_reason=args.tolerance_reason,
-            scope='real model CUDA FP32 base + BF16 autocast + FA2 + checkpointing; 2 synthetic stages; small EM budget')
-        (output/'receipt.json').write_text(json.dumps(receipt,indent=2),encoding='utf-8');print(json.dumps(receipt,indent=2));return
+            scope='real model CUDA/ROCm FP32 base + BF16 autocast + FA2 + checkpointing; 2 synthetic stages; small EM budget')
+        receipt_path.write_text(json.dumps(receipt,indent=2),encoding='utf-8');print(json.dumps(receipt,indent=2));return
     import gc
     import random
     import types
@@ -86,7 +102,7 @@ def main():
     from diagnostics.config import DiagnosticsConfig
     torch.use_deterministic_algorithms(True);torch.backends.cuda.matmul.allow_tf32=False
     torch.manual_seed(config.seed);torch.cuda.manual_seed_all(config.seed);np.random.seed(config.seed);random.seed(config.seed)
-    path=str(local_resource(entry,args.cache_root))
+    path=str(model_path)
     tokenizer=AutoTokenizer.from_pretrained(path,local_files_only=True);tokenizer.truncation_side='left'
     def create():
         m=core.Qwen2ForCausalLM.from_pretrained(path,local_files_only=True,torch_dtype='auto',device_map=0,attn_implementation='flash_attention_2').float()

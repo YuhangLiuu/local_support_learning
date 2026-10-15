@@ -9,6 +9,22 @@ import sys
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 from reproduction.configuration import read_plan,resolve,resources,local_resource,serialized
 from reproduction.memory import estimate
+from reproduction.gpu_environment import inventory,platform_commands
+
+def vllm_dependency_status():
+    """Inspect distribution metadata without importing or repairing vLLM."""
+    try:
+        installed=metadata.version('vllm');requirements=metadata.requires('vllm') or []
+    except metadata.PackageNotFoundError:return dict(installed=False,required_by_lsl=False)
+    from packaging.requirements import Requirement
+    conflicts=[]
+    for raw in requirements:
+        req=Requirement(raw)
+        if req.name.lower() not in {'transformers','torch'} or req.marker and not req.marker.evaluate():continue
+        try:actual=metadata.version(req.name)
+        except metadata.PackageNotFoundError:actual=None
+        if actual is None or actual not in req.specifier:conflicts.append(dict(package=req.name,required=str(req.specifier),installed=actual))
+    return dict(installed=installed,required_by_lsl=False,conflicts=conflicts,action='record only; do not upgrade Transformers or replace GPU packages for vLLM')
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
@@ -16,8 +32,8 @@ def main():
     p.add_argument('--cache-root');p.add_argument('--microbatch',type=int);p.add_argument('--output')
     p.add_argument('--require-gpu',action='store_true');p.add_argument('--dry-run',action='store_true')
     args=p.parse_args();plan=read_plan(args.config);run=resolve(plan,microbatch=args.microbatch)
-    _,entries=resources(args.resources)
-    config_path=local_resource(entries[run.model_name],args.cache_root)/'config.json'
+    manifest,entries=resources(args.resources)
+    config_path=local_resource(entries[run.model_name],args.cache_root,manifest)/'config.json'
     if config_path.is_file():model=json.loads(config_path.read_text())
     elif run.model_name=='Qwen/Qwen2.5-7B-Instruct':
         # Audited metadata only; no model/cache download is needed for planning.
@@ -28,16 +44,13 @@ def main():
                 memory=estimate(model,serialized(run),len(plan['task_order'])) if model else {'status':'pending server model config'},gpu_status='pending')
     if not args.dry_run:
         import torch
-        report.update(torch=torch.__version__,cuda_runtime=torch.version.cuda,cuda_available=torch.cuda.is_available(),gpus=[])
-        for n in range(torch.cuda.device_count()):
-            props=torch.cuda.get_device_properties(n)
-            report['gpus'].append(dict(index=n,name=props.name,memory_gib=props.total_memory/2**30,
-                capability=list(torch.cuda.get_device_capability(n)),bf16=torch.cuda.is_bf16_supported(including_emulation=False)))
+        report.update(inventory(torch))
+        report['vllm']=vllm_dependency_status()
         try:
             import flash_attn
             report['flash_attention']=metadata.version('flash_attn')
         except ImportError:report['flash_attention']=None
-        for command,key in [(['nvidia-smi'],'nvidia_smi'),(['nvidia-smi','topo','-m'],'topology'),(['nvcc','--version'],'cuda_toolkit')]:
+        for command,key in platform_commands(report['backend']):
             try:report[key]=subprocess.check_output(command,text=True,stderr=subprocess.STDOUT,timeout=15)
             except (OSError,subprocess.SubprocessError):report[key]='unavailable'
         report['gpu_status']='available_unvalidated' if report['gpus'] else 'no_gpu'
@@ -46,6 +59,6 @@ def main():
     text=json.dumps(report,indent=2);print(text)
     if args.output:Path(args.output).write_text(text,encoding='utf-8')
     if args.require_gpu and (not report.get('cuda_available') or not report.get('flash_attention') or
-                             any(g['capability'][0]<8 for g in report.get('gpus',[]))):sys.exit(2)
+                             any(not g['bf16'] or (report.get('backend')=='cuda' and g['capability'][0]<8) for g in report.get('gpus',[]))):sys.exit(2)
 
 if __name__=='__main__':main()

@@ -10,7 +10,7 @@ def main():
     if args.dry_run:print(json.dumps(dict(output=args.output,nccl='Pending',scope='communication only')));return
     import torch
     import torch.distributed as dist
-    if not torch.cuda.is_available():p.error('NCCL test requires target CUDA GPUs')
+    if not torch.cuda.is_available():p.error('NCCL/RCCL test requires target CUDA/ROCm GPUs')
     rank=int(os.environ['LOCAL_RANK']);torch.cuda.set_device(rank)
     try:
         dist.init_process_group('nccl')

@@ -11,7 +11,9 @@ import subprocess
 import sys
 
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
-from reproduction.configuration import read_plan,resolve,serialized,resources,local_resource
+from reproduction.configuration import read_plan,resolve,serialized,resources,local_resource,resolve_cache_root
+from reproduction.resource_validation import validate_resource,required_datasets
+from reproduction.gpu_environment import gpu_identity,backend
 
 def code_hash():
     digest=hashlib.sha256()
@@ -49,7 +51,7 @@ def main():
     if args.dry_run:print(json.dumps(report,indent=2));return
     if platform.system()!='Linux':p.error('official training requires Linux fork/SIGQUIT; use --dry-run on CPU Windows')
     import torch
-    if not torch.cuda.is_available() or torch.cuda.device_count()<args.nproc:p.error('requested CUDA GPUs unavailable')
+    if not torch.cuda.is_available() or torch.cuda.device_count()<args.nproc:p.error('requested GPUs unavailable (CUDA/ROCm)')
     if not torch.cuda.is_bf16_supported():p.error('BF16 is required by the unchanged training path')
     disk_anchor=root.parent
     while not disk_anchor.exists():disk_anchor=disk_anchor.parent
@@ -58,13 +60,10 @@ def main():
     except ImportError:p.error('FlashAttention 2 unavailable')
     manifest,entries=resources(args.resources)
     report['resource_revisions']={k:v.get('revision') for k,v in entries.items()}
-    required=[config.model_name,*[r['repo_id'] for r in manifest['resources'] if r['kind']=='dataset']]
+    required=[config.model_name,*sorted(required_datasets(plan))]
     for repo in required:
-        entry=entries[repo];location=local_resource(entry,args.cache_root)
-        if entry.get('status')!='downloaded' or not location.is_dir() or not entry.get('verified_files'):p.error(f'resource not ready: {repo}')
-        for record in entry.get('verified_files',[]):
-            path=location/record['name']
-            if not path.is_file() or path.stat().st_size!=record['bytes']:p.error(f'resource integrity mismatch: {repo}')
+        try:validate_resource(entries[repo],args.cache_root,manifest)
+        except ValueError as error:p.error(str(error))
     audit_path=Path(args.evaluator_audit)
     if not audit_path.is_file():p.error('run verify_evaluators.py on the server before an offline training launch')
     audit=json.loads(audit_path.read_text())
@@ -83,6 +82,11 @@ def main():
     for package,key in [('transformers','transformers'),('flash_attn','flash_attn')]:
         if receipt.get('environment',{}).get(key)!=version(package):p.error(f'parity {package} changed')
     if receipt.get('environment',{}).get('capability')!=list(torch.cuda.get_device_capability()):p.error('parity GPU architecture changed')
+    identity=gpu_identity(torch)
+    if receipt.get('environment',{}).get('backend','cuda')!=identity['backend']:p.error('parity GPU backend changed')
+    if identity['backend']=='rocm':
+        for key in ('hip','gcn_arch'):
+            if receipt.get('environment',{}).get(key)!=identity[key]:p.error(f'parity ROCm {key} changed')
     if args.eval_checkpoint:
         checkpoint=Path(args.eval_checkpoint).resolve()
         if not checkpoint.is_file() or not checkpoint.with_suffix('.json').is_file():p.error('CL state and sidecar required')
@@ -99,9 +103,9 @@ def main():
     (root/'launch.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     env={**os.environ,'PYTHONPATH':str(ROOT)+os.pathsep+os.environ.get('PYTHONPATH',''),
          'HF_HUB_OFFLINE':'1','HF_DATASETS_OFFLINE':'1','TOKENIZERS_PARALLELISM':'false',
-         'PYTORCH_CUDA_ALLOC_CONF':'expandable_segments:True','LM_HARNESS_CACHE_PATH':str(root/'lm_eval_cache')}
-    cache=Path(args.cache_root or manifest['cache_root'])
-    if not cache.is_absolute():cache=ROOT/cache
+         'LM_HARNESS_CACHE_PATH':str(root/'lm_eval_cache')}
+    if backend(torch)=='cuda':env.setdefault('PYTORCH_CUDA_ALLOC_CONF','expandable_segments:True')
+    cache=resolve_cache_root(args.cache_root,manifest)
     env.update(HF_HOME=str(cache/'hf_runtime'),NLTK_DATA=str(cache/'nltk_data'),HF_EVALUATE_OFFLINE='1')
     command=[sys.executable,'-m','torch.distributed.run',f'--nproc_per_node={args.nproc}',f'--master_port={args.master_port}',
              '-m','reproduction.worker','--run-dir',str(root)]
