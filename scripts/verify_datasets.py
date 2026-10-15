@@ -47,7 +47,9 @@ def main():
     from transformers import AutoTokenizer
     manifest,entries=resources(args.manifest)
     ns=original_data_helpers(manifest,args.cache_root)
-    tokenizer=AutoTokenizer.from_pretrained(str(local_resource(entries['Qwen/Qwen2.5-7B-Instruct'],args.cache_root)),local_files_only=True)
+    from reproduction.resource_validation import validate_resource
+    tokenizer_path=validate_resource(entries['Qwen/Qwen2.5-7B-Instruct'],args.cache_root,manifest,weights=False)
+    tokenizer=AutoTokenizer.from_pretrained(str(tokenizer_path),local_files_only=True)
     tokenizer.truncation_side='left';tokenizer.padding_side='left'
     result=dict(seed=args.seed,sample_limit=args.sample_limit,tokenizer_revision=entries['Qwen/Qwen2.5-7B-Instruct']['revision'],
                 raw={},prepared={},evaluators={},warnings=[])

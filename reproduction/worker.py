@@ -32,7 +32,7 @@ def main():
     config.source_model_id=config.model_name
     config.source_model_revision=entries[config.model_name]['revision']
     config.dataset_revisions={k:v['revision'] for k,v in entries.items() if v['kind']=='dataset'}
-    config.model_name=str(local_resource(entries[config.model_name],run.get('cache_root')).resolve())
+    config.model_name=str(local_resource(entries[config.model_name],run.get('cache_root'),manifest))
     controls=run['plan']['data_controls']
     original_load=train.load_dataset_splits
     def bounded_load(name,seed):

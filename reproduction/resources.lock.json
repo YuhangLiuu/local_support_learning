@@ -7,7 +7,7 @@
       "kind": "model",
       "repo_id": "Qwen/Qwen2.5-7B-Instruct",
       "status": "not_cached",
-      "local_path": ".cache\\lsl\\model\\Qwen--Qwen2.5-7B-Instruct",
+      "local_path": ".cache/lsl/model/Qwen--Qwen2.5-7B-Instruct",
       "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
       "files": [
         {
@@ -90,7 +90,7 @@
       "kind": "model",
       "repo_id": "Qwen/Qwen2.5-1.5B-Instruct",
       "status": "not_cached",
-      "local_path": ".cache\\lsl\\model\\Qwen--Qwen2.5-1.5B-Instruct",
+      "local_path": ".cache/lsl/model/Qwen--Qwen2.5-1.5B-Instruct",
       "revision": "989aa7980e4cf806f80c7fef2b1adb7bc71aa306",
       "files": [
         {
@@ -153,7 +153,7 @@
       "kind": "dataset",
       "repo_id": "Tommy0201/igbo_to_english_split",
       "status": "not_cached",
-      "local_path": ".cache\\lsl\\dataset\\Tommy0201--igbo_to_english_split",
+      "local_path": ".cache/lsl/dataset/Tommy0201--igbo_to_english_split",
       "revision": "acbae6a3f7fcf4b44371965db529b587138f9544",
       "files": [
         {
@@ -186,7 +186,7 @@
       "kind": "dataset",
       "repo_id": "AI4Chem/ChemData700K",
       "status": "not_cached",
-      "local_path": ".cache\\lsl\\dataset\\AI4Chem--ChemData700K",
+      "local_path": ".cache/lsl/dataset/AI4Chem--ChemData700K",
       "revision": "3d20c49d03b402f6882ee604971e5bab8559fbcb",
       "files": [
         {
@@ -214,7 +214,7 @@
       "kind": "dataset",
       "repo_id": "AI4Chem/ChemBench4K",
       "status": "not_cached",
-      "local_path": ".cache\\lsl\\dataset\\AI4Chem--ChemBench4K",
+      "local_path": ".cache/lsl/dataset/AI4Chem--ChemBench4K",
       "revision": "9b8fec19c993c270868e4b8ec1eb580e501bcb22",
       "files": [
         {
@@ -327,7 +327,7 @@
       "kind": "dataset",
       "repo_id": "Trendyol/Trendyol-Cybersecurity-Instruction-Tuning-Dataset",
       "status": "not_cached",
-      "local_path": ".cache\\lsl\\dataset\\Trendyol--Trendyol-Cybersecurity-Instruction-Tuning-Dataset",
+      "local_path": ".cache/lsl/dataset/Trendyol--Trendyol-Cybersecurity-Instruction-Tuning-Dataset",
       "revision": "357544e7576607d88eaeac9b0adb07e9fd8bb2bb",
       "files": [
         {
@@ -355,7 +355,7 @@
       "kind": "dataset",
       "repo_id": "XuanwuAI/SecEval",
       "status": "not_cached",
-      "local_path": ".cache\\lsl\\dataset\\XuanwuAI--SecEval",
+      "local_path": ".cache/lsl/dataset/XuanwuAI--SecEval",
       "revision": "205dab7b0888a06f4b53ca7d9c7093e1326683e1",
       "files": [
         {
@@ -383,7 +383,7 @@
       "kind": "dataset",
       "repo_id": "assafbk/lsl-negatives-fineweb-edu",
       "status": "not_cached",
-      "local_path": ".cache\\lsl\\dataset\\assafbk--lsl-negatives-fineweb-edu",
+      "local_path": ".cache/lsl/dataset/assafbk--lsl-negatives-fineweb-edu",
       "revision": "0a6ae293f81685e7dc8f6c6e5e757fdd7b256738",
       "files": [
         {
@@ -416,7 +416,7 @@
       "kind": "dataset",
       "repo_id": "openai/gsm8k",
       "status": "not_cached",
-      "local_path": ".cache\\lsl\\dataset\\openai--gsm8k",
+      "local_path": ".cache/lsl/dataset/openai--gsm8k",
       "revision": "740312add88f781978c0658806c59bc2815b9866",
       "files": [
         {
@@ -464,7 +464,7 @@
       "kind": "dataset",
       "repo_id": "openai/openai_humaneval",
       "status": "not_cached",
-      "local_path": ".cache\\lsl\\dataset\\openai--openai_humaneval",
+      "local_path": ".cache/lsl/dataset/openai--openai_humaneval",
       "revision": "7dce6050a7d6d172f3cc5c32aa97f52fa1a2e544",
       "files": [
         {
@@ -492,7 +492,7 @@
       "kind": "dataset",
       "repo_id": "google/IFEval",
       "status": "not_cached",
-      "local_path": ".cache\\lsl\\dataset\\google--IFEval",
+      "local_path": ".cache/lsl/dataset/google--IFEval",
       "revision": "966cd89545d6b6acfd7638bc708b98261ca58e84",
       "files": [
         {

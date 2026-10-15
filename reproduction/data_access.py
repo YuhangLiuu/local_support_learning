@@ -25,12 +25,12 @@ def pinned_loader(manifest,cache_root=None):
         entry=entries[repo]
         if not entry.get('revision'):raise ValueError(f'missing revision: {repo}')
         kwargs['revision']=entry['revision']
-        local=local_resource(entry,cache_root)
+        local=local_resource(entry,cache_root,manifest)
         # A local raw snapshot avoids network fallback and retains original split metadata.
-        if local.is_dir() and entry.get('status')=='downloaded':
-            kwargs.pop('revision')
-            return load_dataset(str(local),*args,**kwargs)
-        return load_dataset(repo,*args,**kwargs)
+        from .resource_validation import validate_resource
+        validate_resource(entry,cache_root,manifest)
+        kwargs.pop('revision')
+        return load_dataset(str(local),*args,**kwargs)
     return load
 
 def original_data_helpers(manifest,cache_root=None):

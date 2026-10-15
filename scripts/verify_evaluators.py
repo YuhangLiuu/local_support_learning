@@ -14,10 +14,9 @@ def main():
     p.add_argument('--cache-root');args=p.parse_args()
     if args.dry_run:print(json.dumps(vars(args),indent=2));return
     if platform.system()!='Linux':p.error('Evaluator resource downloads are server-only; use --dry-run locally')
-    from reproduction.configuration import resources
+    from reproduction.configuration import resources,resolve_cache_root
     manifest,_=resources(args.manifest)
-    cache=Path(args.cache_root or manifest['cache_root'])
-    if not cache.is_absolute():cache=ROOT/cache
+    cache=resolve_cache_root(args.cache_root,manifest)
     os.environ['HF_HOME']=str(cache/'hf_runtime')
     os.environ['NLTK_DATA']=str(cache/'nltk_data')
     os.environ['HF_ALLOW_CODE_EVAL']='1'
