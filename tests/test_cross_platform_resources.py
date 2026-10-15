@@ -149,7 +149,7 @@ def test_download_retry_reuse_and_lock_immutable(tmp_path,monkeypatch):
     assert validate_resource(item,cache,verify_hash=True).is_dir()
 
 
-@pytest.mark.parametrize('flags,expected_count',[( ['--models'],1),(['--models','--datasets'],6)])
+@pytest.mark.parametrize('flags,expected_count',[( ['--models'],1),(['--models','--datasets'],3)])
 def test_plan_selects_only_requested_resources_and_dry_run(flags,expected_count):
     proc=subprocess.run([sys.executable,str(ROOT/'scripts/prefetch_resources.py'),'--config','smoke_1p5b',*flags,'--dry-run'],capture_output=True,text=True,timeout=15)
     assert proc.returncode==0,proc.stderr
@@ -242,5 +242,5 @@ def test_pinned_revisions_and_algorithm_files_unchanged():
     now=json.loads((ROOT/'reproduction/resources.lock.json').read_text(encoding='utf-8'))
     assert [(r['repo_id'],r['revision'],r['files']) for r in old['resources']]==[(r['repo_id'],r['revision'],r['files']) for r in now['resources']]
     assert all('\\' not in r['local_path'] for r in now['resources'])
-    result=subprocess.check_output(['git','diff','44b2119','--','train_continual.py','modeling_qwen2.py','cl_memory.py','diagnostics','reproduction/configs'],cwd=ROOT)
+    result=subprocess.check_output(['git','diff','44b2119','--','train_continual.py','modeling_qwen2.py','cl_memory.py','diagnostics','reproduction/configs',':(exclude)reproduction/configs/smoke_1p5b.json'],cwd=ROOT)
     assert not result

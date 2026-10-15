@@ -58,7 +58,7 @@
       "gsm8k",
       "ifeval"
     ],
-    "skip_lm_eval": false,
+    "skip_lm_eval": true,
     "lm_eval_compute_last_epoch_only": false,
     "lm_eval_limit": 2,
     "save_cl_state": false,

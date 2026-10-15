@@ -10,7 +10,7 @@ Git 中仍为 schema1，local_path 已统一 POSIX 相对路径，全部 repo/re
 
 预检检查需要的 config/tokenizer/全部权重分片或数据文件及其大小。revision 必须有匹配 `.lsl-resource.json`，或旧缓存逐文件 Hub download metadata；缺少 metadata 时，只有每个必需文件都匹配 pinned SHA256 才能接受。单独目录存在、旧 status=downloaded、手写目录名均不足以通过。`--verify-sha256` 校验有公开 SHA 的文件；没有 SHA 的文件使用固定 revision 与大小，不能称所有文件均有密码学校验。
 
-复用现有 prefetch：`--config` 选择模型，只有加 `--datasets` 才准备该任务、负数据与所需评测数据。smoke_1p5b 的 --models 只含1.5B；--models --datasets 合计一个模型、五个数据集，不下载7B或Chemistry/Cyber数据。`--dry-run` 不访问网络；`--check-only` 只检查；失败可重跑相同命令，成功缓存跳过。`--relocate` 在内存迁移旧路径，机器状态只写缓存侧车，不再改 tracked lock；部署禁止 inventory repin。
+复用现有 prefetch：`--config` 选择模型，只有加 `--datasets` 才准备该任务、负数据与已启用的评测数据。最小smoke_1p5b已设置skip_lm_eval=true、run_cl_eval=true；--models --datasets 合计一个模型、两个数据集（Igbo与Negatives），仍训练LSL、拟合GMM、评测Igbo并采集Diagnostics，不要求通用Benchmark预热报告。正式配置保持完整评测。`--dry-run` 不访问网络；`--check-only` 只检查；失败可重跑相同命令，成功缓存跳过。`--relocate` 在内存迁移旧路径，机器状态只写缓存侧车，不再改 tracked lock；部署禁止 inventory repin。
 
 ## ROCm 环境
 
@@ -42,10 +42,9 @@ python scripts/check_gpu_env.py --config reproduction/configs/smoke_1p5b.json --
 
 python scripts/gpu_parity_test.py --config reproduction/configs/smoke_1p5b.json --cache-root /mnt/workspace/lsl_cache --output /mnt/workspace/lsl_gpu_parity_portable.json
 
-# 真实Smoke需要任务/负样本/评测数据；显式请求，不下载7B。
+# 最小Smoke只需要Igbo任务及负样本；显式请求，不下载7B或通用Benchmark。
 python scripts/prefetch_resources.py --config reproduction/configs/smoke_1p5b.json --datasets --verify-sha256
 python scripts/prefetch_resources.py --config reproduction/configs/smoke_1p5b.json --models --datasets --check-only
-python scripts/verify_evaluators.py --cache-root /mnt/workspace/lsl_cache
 bash scripts/smoke_test.sh 1p5b --cache-root /mnt/workspace/lsl_cache --parity-receipt /mnt/workspace/lsl_gpu_parity_portable.json --experiment-id smoke_1p5b_rocm --acknowledge-issues
 ```
 

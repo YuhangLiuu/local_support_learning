@@ -87,7 +87,9 @@ def required_datasets(plan):
            'cybersecurity_ift':['Trendyol/Trendyol-Cybersecurity-Instruction-Tuning-Dataset','XuanwuAI/SecEval']}
     result={repo for task in plan['task_order'] for repo in tasks[task]}
     if plan['overrides']['activate_cl_method']:result.add('assafbk/lsl-negatives-fineweb-edu')
-    if not plan['overrides']['skip_lm_eval']:result.update(['openai/gsm8k','openai/openai_humaneval','google/IFEval'])
+    if not plan['overrides']['skip_lm_eval']:
+        benchmarks={'gsm8k':'openai/gsm8k','humaneval':'openai/openai_humaneval','ifeval':'google/IFEval'}
+        result.update(benchmarks[task] for task in plan['overrides']['lm_eval_tasks'])
     return result
 
 def selected_files(entry,weights=True):

@@ -64,11 +64,12 @@ def main():
     for repo in required:
         try:validate_resource(entries[repo],args.cache_root,manifest)
         except ValueError as error:p.error(str(error))
-    audit_path=Path(args.evaluator_audit)
-    if not audit_path.is_file():p.error('run verify_evaluators.py on the server before an offline training launch')
-    audit=json.loads(audit_path.read_text())
-    if audit.get('versions',{}).get('lm_eval')!='0.4.10' or audit.get('humaneval_canonical_solution',{}).get('pass@1')!=1.:
-        p.error('evaluator audit missing/failed/version mismatch')
+    if not config.skip_lm_eval:
+        audit_path=Path(args.evaluator_audit)
+        if not audit_path.is_file():p.error('run verify_evaluators.py on the server before an offline training launch')
+        audit=json.loads(audit_path.read_text())
+        if audit.get('versions',{}).get('lm_eval')!='0.4.10' or audit.get('humaneval_canonical_solution',{}).get('pass@1')!=1.:
+            p.error('evaluator audit missing/failed/version mismatch')
     if not args.acknowledge_issues:p.error('read REPRODUCTION_ISSUES.md; use --acknowledge-issues to retain explicit upstream behavior')
     if not args.parity_receipt:p.error('run GPU parity and supply --parity-receipt')
     if args.nproc>1:p.error('multi-rank model/GMM parity is not yet validated; NCCL communication alone is insufficient. Use one GPU for the prepared reference route')
