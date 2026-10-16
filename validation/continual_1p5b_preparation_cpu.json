@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-16",
+  "branch": "research/lsl-observability",
+  "scope": "Windows CPU preparation; no GPU training, installation, model or dataset downloads",
+  "test_command": "python -m pytest -q --basetemp=tmp/continual-final-all",
+  "tests": {"passed": 280, "failed": 0, "skipped": 0, "warnings": 7, "seconds": 138.87},
+  "new_launch_tests": 20,
+  "checks": [
+    "dedicated single seed123 configs and locked 1.5B revision",
+    "microbatch1 and global32 accumulation32; forbidden seed/batch/diagnostics overrides",
+    "real child-process live tee of progress/stderr/traceback and nonzero exit",
+    "CPU AdamW progress wrappers: bitwise identical loss, gradients, parameters and RNG",
+    "read-only wrapper restoration",
+    "explicit LM hardware override changes only wrapper/evaluator batch_size",
+    "strict actual launcher preflight with synthetic A10: success, million-token refusal, stale Receipt refusal; no training/output creation",
+    "existing Stage x Task metric shape, seven checkpoint identities and diagnostic family coverage",
+    "partial/missing/nonfinite metrics, checkpoints, diagnostics, GMM and revision failures rejected",
+    "bash -n scripts/run_continual_1p5b_seed123.sh",
+    "git diff --check",
+    "no Git diff in modeling_qwen2.py, cl_memory.py, train_continual.py, diagnostics, original 7B config"
+  ],
+  "a10_plan": {"gmm_fit_num_tokens": 65536, "lm_eval_batch_size": 1, "diagnostics": "existing extended superset of basic; every1000, max2 batches/context, max64 tokens/batch"},
+  "memory_estimates_gib": {
+    "persistent_lower_bound": 9.4491,
+    "million_token_planning_range": [17.0785, 25.0785],
+    "a10_65536_token_planning_range": [10.1224, 18.1224],
+    "note": "analytical planning geometry only; not measured peaks or certified upper bounds; launch reads real server model config"
+  },
+  "local_environment_note": "Existing CPU venv and Hub0.36.2 PYTHONPATH overlay used; host Hub2.2.0 untouched. Protected core Git blobs unchanged; Windows raw-byte hash is not asserted equal to Linux Receipt hash.",
+  "pending_server": [
+    "actual Full environment/import paths and idle A10",
+    "real cached model/nine dataset SHA256 validation",
+    "existing Receipt must match current Linux core hash, 1.5B revision, rank128/JL256/K16/32 and environment",
+    "real A10 peak memory and EM fitting at 65536 tokens",
+    "real full benchmark evaluation with batch1; large-batch generation equivalence not asserted",
+    "three-stage training and final artifact validation"
+  ],
+  "checkpoint_scope": "LoRA/JL/GMM snapshots for independent probes; not exact optimizer/RNG/data-cursor resume. Completion checks files/sidecars, not a reload of every large tensor."
+}

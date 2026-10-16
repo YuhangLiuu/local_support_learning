@@ -25,11 +25,16 @@ def main():
     import torch
     import torch.multiprocessing as mp
     import train_continual as train
+    controls=run['plan'].get('launch_controls',{})
+    progress=None
     if not config.skip_lm_eval:
         # Preserve the original pre-model/pre-seed import boundary in Full runs.
         from reproduction.lm_evaluation import load_lm_eval,require_nltk_resources
         load_lm_eval()
         require_nltk_resources()
+        if controls.get('lm_eval_batch_size'):
+            from reproduction.training_progress import bounded_lm_loader
+            train.load_lm_eval=bounded_lm_loader(train.load_lm_eval,controls['lm_eval_batch_size'])
     from diagnostics.integration import initialize
     from reproduction.configuration import local_resource
     train.config=config
@@ -60,6 +65,9 @@ def main():
     import numpy as np
     status=root/f'status.rank{train.global_rank}.json'
     observer=None
+    if run['plan'].get('launch_controls',{}).get('live_progress') and train.global_rank==0:
+        from reproduction.training_progress import TrainingProgress
+        progress=TrainingProgress(train,root,torch).install()
     try:
         with train.dist_group():
             with train.wandb_init(config,train.local_rank):
@@ -86,6 +94,9 @@ def main():
         status.write_text(json.dumps(dict(status='incomplete',rank=train.global_rank,error_type=type(error).__name__)),encoding='utf-8')
         raise
     finally:
-        if observer:observer.close()
+        try:
+            if observer:observer.close()
+        finally:
+            if progress:progress.close()
 
 if __name__=='__main__':main()
