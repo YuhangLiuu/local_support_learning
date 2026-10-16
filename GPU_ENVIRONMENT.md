@@ -1,3 +1,5 @@
+> 默认环境恢复已改为 [setup_lsl.sh 按需 Pip 路线](SETUP_LSL.md)：`bash scripts/setup_lsl.sh minimal` 或 `bash scripts/setup_lsl.sh full`。下文 Wheelhouse/旧安装步骤仅供显式选择的高级部署参考，不是默认前置条件。
+
 # GPU 服务器环境
 
 更换云实例的环境恢复使用 [ENVIRONMENT_BOOTSTRAP.md](ENVIRONMENT_BOOTSTRAP.md)：Persistent Wheelhouse、Minimal/Full Profile、当前实例专用venv及严格验收。下文为早期候选安装路线，不能直接复用持久化旧venv。

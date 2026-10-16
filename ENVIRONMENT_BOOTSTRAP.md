@@ -1,3 +1,5 @@
+> 默认环境恢复已改为 [setup_lsl.sh 按需 Pip 路线](SETUP_LSL.md)：`bash scripts/setup_lsl.sh minimal` 或 `bash scripts/setup_lsl.sh full`。下文 Wheelhouse/旧安装步骤仅供显式选择的高级部署参考，不是默认前置条件。
+
 # Persistent Wheelhouse 与实例环境恢复
 
 目标是恢复应用环境，不安装或替换系统GPU栈。Windows只开发、CPU测试和读取官方制品元数据；没有在Windows下载Linux Wheels、预训练模型、数据或NLTK包，也没有创建新的训练环境。

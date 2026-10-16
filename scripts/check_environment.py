@@ -10,7 +10,7 @@ ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 from reproduction.environment_runtime import probe,profile,check_application_paths,atomic_json,fingerprint,sha,CATALOG,safe_child
 
 def acceptance_hash():
-    return fingerprint({name:sha(ROOT/name) for name in ['reproduction/environment_runtime.py','reproduction/lm_evaluation.py','reproduction/environment/profiles.json','reproduction/environment/artifacts.json','scripts/check_environment.py']})
+    return fingerprint({name:sha(ROOT/name) for name in ['reproduction/setup_environment.py','reproduction/environment_runtime.py','reproduction/lm_evaluation.py','reproduction/environment/profiles.json','reproduction/environment/artifacts.json','scripts/check_environment.py']})
 
 def kernel_checks(torch):
     if not torch.cuda.is_available():raise ValueError('CUDA/ROCm GPU unavailable')
@@ -80,7 +80,10 @@ def verify_report(path,requires_full=False):
     if current['gpu_imports']!=report['gpu_imports'] or current['executable_sha256']!=report['interpreter_sha256']:
         raise ValueError('GPU import paths or interpreter changed since acceptance')
     if current['python_full']!=report['python_full']:raise ValueError('Python build changed since acceptance')
-    check_application_paths(report['profile'],report['env_root'])
+    if report.get('strategy')=='pip':
+        from reproduction.setup_environment import application_check
+        if application_check(report['profile'])!=report['checks']['application_paths']:raise ValueError('application import paths changed since acceptance')
+    else:check_application_paths(report['profile'],report['env_root'])
     return report
 
 def main():
@@ -103,8 +106,12 @@ def main():
         if not expected.is_file() or Path(sys.executable).absolute()!=expected.absolute() or sys.prefix==sys.base_prefix:
             raise ValueError('unexpected/broken venv interpreter; never accept a prompt label as proof')
         bound=json.loads((root/'bootstrap.json').read_text())
-        wheelhouse=Path(bound['wheelhouse'])
-        if sha(wheelhouse/'manifest.json')!=bound['wheelhouse_sha256']:raise ValueError('bound wheelhouse manifest changed')
+        report['strategy']=bound.get('strategy','wheelhouse')
+        if report['strategy']=='pip':
+            wheelhouse=None
+        else:
+            wheelhouse=Path(bound['wheelhouse'])
+            if sha(wheelhouse/'manifest.json')!=bound['wheelhouse_sha256']:raise ValueError('bound wheelhouse manifest changed')
         state=probe(args.image_id);report.update(identity=state['identity'],instance_id=state['instance_id'],gpu_imports=state['gpu_imports'],interpreter_sha256=state['executable_sha256'])
         if bound['profile']!=args.profile or bound['base']['identity']!=state['identity']:raise ValueError('environment ABI/GPU/profile binding mismatch')
         base=bound['base'];base_path=Path(base['executable'])
@@ -113,7 +120,10 @@ def main():
         if not base_path.is_file() or sha(base_path)!=base['executable_sha256'] or Path(state['base_executable'])!=base_path.resolve():
             raise ValueError('base interpreter link broken or replaced')
         if state['instance_id']!=base['instance_id']:raise ValueError('environment belongs to an old instance')
-        report['checks']['application_paths']=check_application_paths(args.profile,root)
+        if report['strategy']=='pip':
+            from reproduction.setup_environment import application_check
+            report['checks']['application_paths']=application_check(args.profile)
+        else:report['checks']['application_paths']=check_application_paths(args.profile,root)
         for name,record in base['gpu_packages'].items():
             actual=state['gpu_packages'].get(name)
             if actual!=record:raise ValueError(f'GPU system package changed/shadowed: {name}')
@@ -135,7 +145,7 @@ def main():
             wrapper,_=load_lm_eval()
             report['checks']['real_hflm_cpu_call']=tiny_full_lm_check()
             import nltk
-            bundle=json.loads((wheelhouse/'manifest.json').read_text())
+            bundle=json.loads((wheelhouse/'manifest.json').read_text()) if wheelhouse else {'nltk_files':[]}
             for item in bundle['nltk_files']:
                 target=safe_child(root/'share',item['file'])
                 if not target.is_file() or sha(target)!=item['sha256']:raise ValueError('installed NLTK resource integrity failure')

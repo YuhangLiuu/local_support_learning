@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-16",
+  "scope": "Windows CPU regression and synthetic recovery; no package installation or GPU certification",
+  "command": "python -m pytest -q --basetemp=tmp/setup-final-all",
+  "result": {"passed": 260, "failed": 0, "skipped": 0, "warnings": 7, "seconds": 132.60},
+  "setup_specific_tests": 30,
+  "additional_checks": ["bash -n scripts/setup_lsl.sh", "git diff --check"],
+  "coverage": [
+    "Minimal/Full pinned application requirements",
+    "wrong Transformers/Tokenizers and missing Pomegranate/lm-eval repair selection",
+    "fresh-process actual import resolution: isolated Transformers 4.56.2 over synthetic system 5.x",
+    "application-only Pip planning and GPU core rejection",
+    "satisfied dependencies skip Pip installation",
+    "broken/stale/wrong-base interpreter rejection and fresh venv creation",
+    "synthetic CUDA/ROCm orchestration, reuse and partial install failure",
+    "independent acceptance subprocess and failure invalidates previous PASS",
+    "existing LSL CPU numerical, Tiny model, real CPU GMM EM and lazy lm-eval regressions"
+  ],
+  "local_environment_note": "Existing CPU Python and temporary Hub 0.36.2 PYTHONPATH overlay used; host Hub 2.2.0 was not modified. No dependencies, models, datasets or Linux wheels installed/downloaded.",
+  "pending_on_target_linux": [
+    "actual online Pip recovery and repeat-run idempotence",
+    "system GPU package reuse and final import paths",
+    "real CUDA/ROCm BF16 and FlashAttention forward/backward",
+    "Full NLTK resource preparation and acceptance",
+    "separate experiment resource/Parity gates before training"
+  ]
+}

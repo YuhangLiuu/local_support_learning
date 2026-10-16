@@ -17,6 +17,8 @@ def require_lm_eval():
 def require_nltk_resources(directory=None):
     try:
         import nltk
+        managed_data=Path(sys.prefix)/'share/nltk_data'
+        if managed_data.is_dir() and str(managed_data) not in nltk.data.path:nltk.data.path.insert(0,str(managed_data))
         if directory and str(directory) not in nltk.data.path:nltk.data.path.insert(0,str(directory))
         for resource in ('tokenizers/punkt','tokenizers/punkt_tab/english'):nltk.data.find(resource)
     except (ImportError,LookupError) as error:

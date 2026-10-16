@@ -1,3 +1,5 @@
+> 默认环境恢复已改为 [setup_lsl.sh 按需 Pip 路线](SETUP_LSL.md)：`bash scripts/setup_lsl.sh minimal` 或 `bash scripts/setup_lsl.sh full`。下文 Wheelhouse/旧安装步骤仅供显式选择的高级部署参考，不是默认前置条件。
+
 # Windows 开发与 AMD ROCm 服务器部署
 
 新实例的持久化环境恢复见 [ENVIRONMENT_BOOTSTRAP.md](ENVIRONMENT_BOOTSTRAP.md)。新系统保持ROCm底层包不变，按ABI/软件栈选择Wheelhouse，并将应用依赖安装到当前实例的新环境。
