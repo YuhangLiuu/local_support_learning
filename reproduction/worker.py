@@ -25,6 +25,11 @@ def main():
     import torch
     import torch.multiprocessing as mp
     import train_continual as train
+    if not config.skip_lm_eval:
+        # Preserve the original pre-model/pre-seed import boundary in Full runs.
+        from reproduction.lm_evaluation import load_lm_eval,require_nltk_resources
+        load_lm_eval()
+        require_nltk_resources()
     from diagnostics.integration import initialize
     from reproduction.configuration import local_resource
     train.config=config

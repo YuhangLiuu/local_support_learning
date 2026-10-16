@@ -28,6 +28,10 @@ def test_all_original_experiment_defaults_unchanged():
 
 class RemoveObservationCalls(ast.NodeTransformer):
     calls = {"stage_context", "dataset_context", "reproduction_stage", "reproduction_summary", "save_diagnostic_checkpoint"}
+    def visit_Assign(self,node):
+        if isinstance(node.value,ast.Call) and isinstance(node.value.func,ast.Name) and node.value.func.id=='load_lm_eval':
+            return None
+        return self.generic_visit(node)
     def visit_Expr(self, node):
         if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name) and node.value.func.id in self.calls:
             return None

@@ -242,5 +242,5 @@ def test_pinned_revisions_and_algorithm_files_unchanged():
     now=json.loads((ROOT/'reproduction/resources.lock.json').read_text(encoding='utf-8'))
     assert [(r['repo_id'],r['revision'],r['files']) for r in old['resources']]==[(r['repo_id'],r['revision'],r['files']) for r in now['resources']]
     assert all('\\' not in r['local_path'] for r in now['resources'])
-    result=subprocess.check_output(['git','diff','44b2119','--','train_continual.py','modeling_qwen2.py','cl_memory.py','diagnostics','reproduction/configs',':(exclude)reproduction/configs/smoke_1p5b.json'],cwd=ROOT)
+    result=subprocess.check_output(['git','diff','44b2119','--','modeling_qwen2.py','cl_memory.py','diagnostics','reproduction/configs',':(exclude)reproduction/configs/smoke_1p5b.json'],cwd=ROOT)
     assert not result

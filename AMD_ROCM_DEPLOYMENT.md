@@ -1,5 +1,7 @@
 # Windows 开发与 AMD ROCm 服务器部署
 
+新实例的持久化环境恢复见 [ENVIRONMENT_BOOTSTRAP.md](ENVIRONMENT_BOOTSTRAP.md)。新系统保持ROCm底层包不变，按ABI/软件栈选择Wheelhouse，并将应用依赖安装到当前实例的新环境。
+
 本轮只修改路径、资源预检、下载入口、环境检测和错误处理；原模型、LoRA、GMM、Gate、平滑、loss/optimizer/scheduler、实验配置和 Diagnostics 指标定义保持不变。baseline/main/CPU tag 均不移动。本地没有下载权重或数据，没有安装环境，没有执行真实 ROCm 计算。
 
 ## 路径与资源约定

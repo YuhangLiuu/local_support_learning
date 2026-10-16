@@ -31,6 +31,7 @@ def main():
     p.add_argument('--parity-receipt');p.add_argument('--acknowledge-issues',action='store_true')
     p.add_argument('--eval-checkpoint');p.add_argument('--master-port',type=int,default=12929)
     p.add_argument('--evaluator-audit',default=str(ROOT/'validation/evaluator_audit.json'))
+    p.add_argument('--environment-report',help='optional strict PASS report from bootstrap; must match this interpreter/instance/profile')
     p.add_argument('--dry-run',action='store_true')
     args=p.parse_args();plan=read_plan(args.config)
     config=resolve(plan,args.seed,args.microbatch,args.nproc,args.diagnostics)
@@ -46,10 +47,23 @@ def main():
                              accumulation=config.ft_global_batch_size//(config.local_batch_size*args.nproc)),
         resources=str(Path(args.resources).resolve()),cache_root=args.cache_root,output=str(root),
         start_time=datetime.now().strftime('%Y_%m_%d__%H_%M_%S'),core_hash=code_hash(),
-        eval_checkpoint=args.eval_checkpoint,pending_checks=['GPU','resource integrity','parity receipt','known issues'],
+        eval_checkpoint=args.eval_checkpoint,environment_report=args.environment_report,pending_checks=['GPU','resource integrity','parity receipt','known issues'],
         checkpoint_glob='experiment/checkpoints/cl_state_stage*_epoch*.pt')
     if args.dry_run:print(json.dumps(report,indent=2));return
     if platform.system()!='Linux':p.error('official training requires Linux fork/SIGQUIT; use --dry-run on CPU Windows')
+    from reproduction.environment_runtime import check_training_compatibility
+    try:check_training_compatibility(config.skip_lm_eval)
+    except ValueError as error:p.error(f'ENVIRONMENT FAIL: {error}')
+    environment=None
+    managed_path=Path(sys.prefix)/'bootstrap.json'
+    managed=json.loads(managed_path.read_text()) if managed_path.is_file() else {}
+    environment_path=args.environment_report or managed.get('acceptance_report')
+    if managed and not environment_path:p.error('ENVIRONMENT FAIL: managed environment has no acceptance report')
+    if environment_path:
+        from scripts.check_environment import verify_report
+        try:environment=verify_report(environment_path,requires_full=not config.skip_lm_eval)
+        except Exception as error:p.error(f'ENVIRONMENT FAIL: {error}')
+        report['environment_report']=str(environment_path)
     import torch
     if not torch.cuda.is_available() or torch.cuda.device_count()<args.nproc:p.error('requested GPUs unavailable (CUDA/ROCm)')
     if not torch.cuda.is_bf16_supported():p.error('BF16 is required by the unchanged training path')
@@ -65,6 +79,11 @@ def main():
         try:validate_resource(entries[repo],args.cache_root,manifest)
         except ValueError as error:p.error(str(error))
     if not config.skip_lm_eval:
+        from reproduction.lm_evaluation import load_lm_eval,require_nltk_resources
+        try:
+            load_lm_eval()
+            require_nltk_resources(resolve_cache_root(args.cache_root,manifest)/'nltk_data')
+        except RuntimeError as error:p.error(str(error))
         audit_path=Path(args.evaluator_audit)
         if not audit_path.is_file():p.error('run verify_evaluators.py on the server before an offline training launch')
         audit=json.loads(audit_path.read_text())
@@ -108,6 +127,7 @@ def main():
     if backend(torch)=='cuda':env.setdefault('PYTORCH_CUDA_ALLOC_CONF','expandable_segments:True')
     cache=resolve_cache_root(args.cache_root,manifest)
     env.update(HF_HOME=str(cache/'hf_runtime'),NLTK_DATA=str(cache/'nltk_data'),HF_EVALUATE_OFFLINE='1')
+    if environment and environment.get('nltk_data'):env['NLTK_DATA']=environment['nltk_data']
     command=[sys.executable,'-m','torch.distributed.run',f'--nproc_per_node={args.nproc}',f'--master_port={args.master_port}',
              '-m','reproduction.worker','--run-dir',str(root)]
     with (root/'process.log').open('w',encoding='utf-8') as log:

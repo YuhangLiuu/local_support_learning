@@ -1,5 +1,7 @@
 # GPU 服务器环境
 
+更换云实例的环境恢复使用 [ENVIRONMENT_BOOTSTRAP.md](ENVIRONMENT_BOOTSTRAP.md)：Persistent Wheelhouse、Minimal/Full Profile、当前实例专用venv及严格验收。下文为早期候选安装路线，不能直接复用持久化旧venv。
+
 AMD现有环境部署优先阅读 [AMD_ROCM_DEPLOYMENT.md](AMD_ROCM_DEPLOYMENT.md)。下文PyTorch2.9/CUDA安装是原候选NVIDIA路线，不能用于覆盖已可用的ROCm2.12环境；ROCm不要求NVIDIA工具或CUDA runtime字段非空。
 
 目标 Linux / Python3.11。setup_gpu_env.sh 创建新 venv，拒绝覆盖。PyTorch2.9.0 CUDA wheel 在 cu126/cu128/cu130 中按驱动、GPU架构、nvcc选择；FlashAttention2.8.3 是未实测候选。requirements-gpu.txt 固定 Transformers4.56.2、Pomegranate1.1.2、lm_eval0.4.10 等；CPU验证不等于 CUDA 环境认证。

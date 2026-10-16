@@ -23,8 +23,7 @@ import math
 import json
 import sacrebleu
 
-from lm_eval.models.huggingface import HFLM
-from lm_eval import simple_evaluate
+from reproduction.lm_evaluation import load_lm_eval
 
 from ddp import wrap_model_ddp, dist_group, all_reduce, all_gather_list, barrier
 from utils import get_grad_norms, get_param_count, get_mlp_frobenius_norms
@@ -694,25 +693,6 @@ def reuse_initial_eval_scores(config, cross_tasks, log_prefix, initial_evaluatio
     return epoch_lm_evals, epoch_ppls, epoch_task_evals, cross_task_epoch_ppls, cross_task_epoch_evals, epoch_task_evals_total
 
 
-class HFWithExternalCache(HFLM):
-    @property
-    def max_gen_toks(self):
-        return 1024
-    
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        pretrained = self.pretrained.module if hasattr(self.pretrained, "module") else self.pretrained
-        self.num_layers = pretrained.config.num_hidden_layers
-        self.attention_type = pretrained.config._attn_implementation
-
-    # used for generate_until / few generative tasks
-    def _model_generate(self, context, max_length, stop, **generation_kwargs):
-        from transformers.cache_utils import DynamicCache
-        generation_kwargs["past_key_values"] = DynamicCache()  # standard cache for quadratic attention
-        
-        return super()._model_generate(context, max_length, stop, **generation_kwargs)
-
-
 def base_model_performance_cache_path(config):
     """Path for the cached base-model zero-shot lm-eval scores + captured generations, keyed by base
     model + task set (the two things those depend on). "" if caching is disabled."""
@@ -777,6 +757,7 @@ def lm_eval_harness(model, tokenizer, tasks, limit=None, is_sample=False, log_pr
                            f"-- these are placeholders, not measured scores")
         return 0, results, []
 
+    HFWithExternalCache, simple_evaluate = load_lm_eval()
     captured_texts = {}  # {benchmark: [{"prompt", "resp", "filtered_resp"} per sample, capped per task]}
 
     model.eval()
@@ -1359,6 +1340,15 @@ if __name__ == "__main__":
     
     from configs.config_continual import Configuration
     config = Configuration()
+    from reproduction.environment_runtime import check_training_compatibility
+    check_training_compatibility(config.skip_lm_eval)
+    from pathlib import Path
+    import sys
+    managed_environment = Path(sys.prefix)/'bootstrap.json'
+    if not config.skip_lm_eval:
+        from reproduction.lm_evaluation import require_nltk_resources
+        load_lm_eval()
+        require_nltk_resources()
     logger.info('\n'.join(f"{k} = {v}" for k, v in config.__dict__.items()))
     start_time = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
     config.start_time = start_time
@@ -1366,6 +1356,10 @@ if __name__ == "__main__":
     # We need to build the dataloaders before CUDA init so the fork-based workers spawn from a CUDA-clean process (multiprocessing_context='fork' deadlocks if forked after CUDA is initialized).
     tokenizer = load_tokenizer(config)
     dataloaders = build_dataloaders(config, tokenizer)
+    if managed_environment.is_file():
+        # Hardware probing must remain after the original pre-CUDA loader setup.
+        from scripts.check_environment import verify_report
+        verify_report(json.loads(managed_environment.read_text())['acceptance_report'], requires_full=not config.skip_lm_eval)
 
     # Initialize WandB
     with dist_group():

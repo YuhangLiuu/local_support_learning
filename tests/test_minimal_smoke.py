@@ -50,6 +50,9 @@ def test_actual_launch_preflight_only_requires_enabled_evaluator_audit(name,expe
     # Mock hardware boundary only; execute actual launcher resource selection and
     # audit policy. Stop before Parity validation, torchrun or model computation.
     from scripts import run_reproduction as launch
+    from reproduction import lm_evaluation
+    monkeypatch.setattr(lm_evaluation,'load_lm_eval',lambda:(None,None))
+    monkeypatch.setattr(lm_evaluation,'require_nltk_resources',lambda *args:None)
     selected=[]
     monkeypatch.setitem(sys.modules,'torch',SimpleNamespace(cuda=SimpleNamespace(is_available=lambda:True,device_count=lambda:1,is_bf16_supported=lambda:True)))
     monkeypatch.setitem(sys.modules,'flash_attn',SimpleNamespace())
