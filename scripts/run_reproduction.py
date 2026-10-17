@@ -122,7 +122,9 @@ def main():
     if not receipt.get('passed') or receipt.get('core_hash')!=report['core_hash'] or receipt.get('model_revision')!=entries[config.model_name]['revision']:
         p.error('parity receipt failed/stale/model mismatch')
     if receipt.get('environment',{}).get('torch')!=torch.__version__:p.error('parity torch environment changed')
-    from scripts.gpu_parity_test import geometry
+    from scripts.gpu_parity_test import geometry,validate_gmm_receipt
+    try:validate_gmm_receipt(receipt,config)
+    except (ValueError,TypeError,IndexError) as error:p.error(str(error))
     from importlib.metadata import version
     if receipt.get('geometry')!=geometry(config):p.error('parity receipt has different LoRA/GMM/gate geometry')
     for package,key in [('transformers','transformers'),('flash_attn','flash_attn')]:

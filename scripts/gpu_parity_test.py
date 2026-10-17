@@ -70,6 +70,61 @@ def synthetic_probe_stats(activations, components):
                          'Synthetic probe diversity is insufficient for this GMM configuration.')
     return stats
 
+
+def parity_fit_config(config, args):
+    """Build the parity-only fit view from the resolved experiment config.
+
+    In particular, parity must exercise the same failure policy as the actual
+    experiment.  Keeping this in one small helper also makes accidental
+    divergence visible in CPU tests.
+    """
+    import types
+    return types.SimpleNamespace(
+        gmm_fit_num_tokens=args.fit_tokens,
+        seq_len_train=128,
+        gmm_skip_on_fail=bool(getattr(config, "gmm_skip_on_fail", False)),
+    )
+
+
+def fit_outcome(stage, which, ratio):
+    """Validate and normalize the owner-active ratio returned by fit_cl_memory."""
+    ratio = float(ratio)
+    if not math.isfinite(ratio) or not 0.0 <= ratio <= 1.0:
+        raise ValueError(f"invalid GMM active ratio for stage={stage} which={which}: {ratio}")
+    if ratio == 0.0:
+        raise ValueError(f"all GMM owners disabled for stage={stage} which={which}")
+    print(f'[PARITY GMM FIT] stage={stage} which={which} active_ratio={ratio}',flush=True)
+    return [int(stage), str(which), ratio]
+
+
+def validate_gmm_receipt(receipt, config):
+    if receipt.get('gmm_skip_on_fail') is not bool(config.gmm_skip_on_fail):
+        raise ValueError('parity GMM failure policy missing or differs from experiment')
+    outcomes=receipt.get('gmm_active_ratios',[])
+    expected=[(0,'neg'),(0,'pos'),(1,'pos')] if config.activate_cl_method else []
+    if [(r[0],r[1]) for r in outcomes] != expected:
+        raise ValueError('parity GMM fit outcomes missing or unexpected')
+    for stage,which,ratio in outcomes:fit_outcome(stage,which,ratio)
+
+def compare_parity(a,b,errors,atol=0.,rtol=0.):
+    import torch
+    import numpy as np
+    if isinstance(a,torch.Tensor):
+        if not torch.equal(a,b):errors['bitwise']=False
+        if a.numel() and a.is_floating_point():
+            delta=(a.double()-b.double()).abs()
+            errors['max_abs']=max(errors['max_abs'],float(delta.max()))
+            errors['max_rel']=max(errors['max_rel'],float((delta/torch.maximum(a.double().abs(),b.double().abs()).clamp_min(1e-12)).max()))
+        torch.testing.assert_close(a,b,atol=atol,rtol=rtol)
+    elif isinstance(a,np.ndarray):np.testing.assert_array_equal(a,b)
+    elif isinstance(a,dict):
+        assert a.keys()==b.keys()
+        for k in a:compare_parity(a[k],b[k],errors,atol,rtol)
+    elif isinstance(a,(tuple,list)):
+        assert len(a)==len(b)
+        for x,y in zip(a,b):compare_parity(x,y,errors,atol,rtol)
+    else:assert a==b
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--config',default='smoke_7b');p.add_argument('--resources',default=str(ROOT/'reproduction/resources.lock.json'))
@@ -106,31 +161,19 @@ def main():
         reference=torch.load(output/'off.pt',map_location='cpu',weights_only=False)
         errors=dict(max_abs=0.,max_rel=0.,bitwise=True)
         def compare(a,b):
-            if isinstance(a,torch.Tensor):
-                if not torch.equal(a,b):errors['bitwise']=False
-                if a.numel() and a.is_floating_point():
-                    delta=(a.double()-b.double()).abs()
-                    errors['max_abs']=max(errors['max_abs'],float(delta.max()))
-                    errors['max_rel']=max(errors['max_rel'],float((delta/torch.maximum(a.double().abs(),b.double().abs()).clamp_min(1e-12)).max()))
-                torch.testing.assert_close(a,b,atol=args.atol,rtol=args.rtol)
-            elif isinstance(a,np.ndarray):np.testing.assert_array_equal(a,b)
-            elif isinstance(a,dict):
-                assert a.keys()==b.keys()
-                for k in a:compare(a[k],b[k])
-            elif isinstance(a,(tuple,list)):
-                assert len(a)==len(b)
-                for x,y in zip(a,b):compare(x,y)
-            else:assert a==b
+            compare_parity(a,b,errors,args.atol,args.rtol)
         for mode in ('basic','extended'):
             compare(reference,torch.load(output/f'{mode}.pt',map_location='cpu',weights_only=False))
             for stage in (0,1):
                 compare(torch.load(output/f'off_stage{stage}.pt',map_location='cpu',weights_only=False,mmap=True),
                         torch.load(output/f'{mode}_stage{stage}.pt',map_location='cpu',weights_only=False,mmap=True))
         receipt=dict(passed=True,core_hash=code_hash(),model_revision=entry['revision'],geometry=geometry(config),
+            gmm_skip_on_fail=reference['gmm_skip_on_fail'],gmm_active_ratios=reference.get('gmm_active_ratios',[]),
             environment=dict(torch=torch.__version__,**gpu_identity(torch),transformers=metadata.version('transformers'),
                              flash_attn=metadata.version('flash_attn')),errors=errors,
             atol=args.atol,rtol=args.rtol,tolerance_reason=args.tolerance_reason,
             scope='real model CUDA/ROCm FP32 base + BF16 autocast + FA2 + checkpointing; 2 synthetic stages; small EM budget')
+        validate_gmm_receipt(receipt,config)
         receipt_path.write_text(json.dumps(receipt,indent=2),encoding='utf-8');print(json.dumps(receipt,indent=2));return
     import gc
     import random
@@ -167,14 +210,17 @@ def main():
                 y=method(mask,i,pad);events.append((name,'smoothed',i,y.detach().cpu().clone()));return y
             linear.is_in_cl_memory=gate;linear._temporal_smoothing_filter=filtered
     def snapshot(m):
-        result=dict(adapters={},gmm={},ema={},rng=(torch.get_rng_state(),torch.cuda.get_rng_state_all(),np.random.get_state(),random.getstate()))
+        result=dict(adapters={},gmm={},gmm_disabled={},negative_fit_failed={},ema={},rng=(torch.get_rng_state(),torch.cuda.get_rng_state_all(),np.random.get_state(),random.getstate()))
         for name,c in m.named_modules():
             if not isinstance(c,core.ConditionalLoRALinear):continue
             for i,(a,b) in enumerate(zip(c.lora_A,c.lora_B)):
                 result['adapters'][(name,i)]=tuple(hashlib.sha256(t.detach().cpu().contiguous().numpy().tobytes()).hexdigest() for t in (a,b))
             for i,state in c._smoothing_state.items():result['ema'][(name,i)]=state.cpu().clone()
             if c.is_cl_memory_owner:
-                for i,clf in enumerate(c.cl_gmm):result['gmm'][(name,i)]=clf.state_dict()
+                result['negative_fit_failed'][name]=bool(getattr(c,'_neg_fit_failed',False))
+                for i,clf in enumerate(c.cl_gmm):
+                    result['gmm'][(name,i)]=clf.state_dict()
+                    result['gmm_disabled'][(name,i)]=bool(c.is_disabled[i])
         return result
     def attach(m,stage):
         observer=attach_diagnostics(m,DiagnosticsConfig(enabled=args.worker!='off',level='basic' if args.worker=='off' else args.worker,
@@ -182,7 +228,7 @@ def main():
         if observer:observer.set_context(stage=stage,epoch=0,dataset='synthetic_gpu_probe',mode='train')
         return observer
     lines=build_synthetic_probe(config.seed, count=max(1024, args.fit_tokens//16))
-    fit=types.SimpleNamespace(gmm_fit_num_tokens=args.fit_tokens,seq_len_train=128,gmm_skip_on_fail=False)
+    fit=parity_fit_config(config,args)
     batch=tokenizer(lines[:1],return_tensors='pt',truncation=True,max_length=32,padding=True,add_special_tokens=False).to('cuda')
     batch['labels']=batch.input_ids.masked_fill(~batch.attention_mask.bool(),-100)
     def loader(negative=False):
@@ -207,7 +253,9 @@ def main():
     for stage in (0,1):
         core.add_lora(model,r=config.lora_r,alpha=config.lora_alpha,gmm_kwargs=gmm_kwargs)
         observer=attach(model,stage)
-        if stage==0 and config.activate_cl_method:assert memory.fit_cl_memory(model,loader(True),tokenizer,fit,which='neg')==1.
+        if stage==0 and config.activate_cl_method:
+            ratio=memory.fit_cl_memory(model,loader(True),tokenizer,fit,which='neg')
+            payload.setdefault('gmm_active_ratios',[]).append(fit_outcome(stage,'neg',ratio))
         model.train();opt=torch.optim.AdamW([p for p in model.parameters() if p.requires_grad],lr=config.ft_learning_rate,
                                            betas=(config.beta1,config.beta2),weight_decay=config.weight_decay)
         begin=len(events);score_begin=len(scores)
@@ -217,7 +265,9 @@ def main():
         opt.step();opt.zero_grad(set_to_none=True)
         payload[f'{stage}/train']=dict(logits=result.logits.detach().cpu(),loss=result.loss.detach().cpu(),grads=grads,state=snapshot(model),events=events[begin:],likelihood_margins=scores[score_begin:])
         del result,grads,opt
-        if config.activate_cl_method:assert memory.fit_cl_memory(model,loader(),tokenizer,fit,which='pos')==1.
+        if config.activate_cl_method:
+            ratio=memory.fit_cl_memory(model,loader(),tokenizer,fit,which='pos')
+            payload.setdefault('gmm_active_ratios',[]).append(fit_outcome(stage,'pos',ratio))
         model.eval();begin=len(events);score_begin=len(scores)
         with torch.no_grad(),torch.amp.autocast('cuda',dtype=torch.bfloat16):result=model(**batch,use_cache=False)
         expected=result.logits.detach().cpu();payload[f'{stage}/eval']=dict(logits=expected,loss=result.loss.cpu(),state=snapshot(model),events=events[begin:],likelihood_margins=scores[score_begin:])
@@ -240,6 +290,7 @@ def main():
             payload[f'cache/{step}']=dict(logits=cached.logits.cpu(),kv=[(c.keys.cpu(),c.values.cpu()) for c in cache.layers],state=snapshot(model))
     payload['synthetic_probe_stats']=fit_stats
     payload['synthetic_probe_seed']=config.seed
+    payload['gmm_skip_on_fail']=fit.gmm_skip_on_fail
     torch.save(payload,output/f'{args.worker}.pt')
 
 if __name__=='__main__':main()

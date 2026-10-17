@@ -179,6 +179,7 @@ def test_actual_launcher_strict_preflight_no_training(tmp_path,monkeypatch,capsy
     from scripts.gpu_parity_test import geometry
     receipt.write_text(json.dumps(dict(passed=True,core_hash='stale' if mode=='stale_receipt' else launch.code_hash(),
         model_revision=plan['model_revision'],geometry=geometry(config),
+        gmm_skip_on_fail=config.gmm_skip_on_fail,gmm_active_ratios=[[0,'neg',.75],[0,'pos',.75],[1,'pos',.75]],
         environment=dict(torch='test-torch',transformers='4.56.2',flash_attn='2.8.3',capability=[8,6],backend='cuda'))))
     audit=tmp_path/'audit.json';audit.write_text(json.dumps(dict(versions={'lm_eval':'0.4.10'},humaneval_canonical_solution={'pass@1':1})))
     output=tmp_path/'runs'
