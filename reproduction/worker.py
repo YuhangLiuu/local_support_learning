@@ -55,19 +55,27 @@ def main():
         if controls.get('test_cap') is not None:
             splits['test']=splits['test'].select(range(min(controls['test_cap'],len(splits['test']))))
         return splits
-    train.load_dataset_splits=bounded_load
+    sampling=None
+    if controls.get('pilot_sampling'):
+        from reproduction.pilot_sampling import PilotSampling
+        sampling=PilotSampling(train,run['plan'],manifest,root/'experiment/sampling_manifest.json',
+                               run.get('sample_manifest')).install()
+        # Skip general evaluation entirely, including cached/dummy zero scores.
+        train.lm_eval_harness=lambda *a,**kw:(None,{}, {})
+    else:train.load_dataset_splits=bounded_load
     mp.set_start_method('fork',force=True)
     (root/'work').mkdir(exist_ok=True);(root/'logs').mkdir(exist_ok=True)
     os.chdir(root/'work')
     tokenizer=train.load_tokenizer(config)
     dataloaders=train.build_dataloaders(config,tokenizer)
+    if sampling:sampling.verify()
     import random
     import numpy as np
     status=root/f'status.rank{train.global_rank}.json'
     observer=None
     if run['plan'].get('launch_controls',{}).get('live_progress') and train.global_rank==0:
         from reproduction.training_progress import TrainingProgress
-        progress=TrainingProgress(train,root,torch).install()
+        progress=TrainingProgress(train,root,torch,gmm_details=bool(run['plan'].get('launch_controls',{}).get('pilot'))).install()
     try:
         with train.dist_group():
             with train.wandb_init(config,train.local_rank):

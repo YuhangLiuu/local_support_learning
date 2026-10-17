@@ -247,5 +247,6 @@ def test_pinned_revisions_and_algorithm_files_unchanged():
     result=subprocess.check_output(['git','diff','44b2119','--','modeling_qwen2.py','cl_memory.py','diagnostics','reproduction/configs',
                                     ':(exclude)reproduction/configs/smoke_1p5b.json',
                                     ':(exclude)reproduction/configs/continual_1p5b_lsl.json',
-                                    ':(exclude)reproduction/configs/continual_1p5b_lsl_a10.json'],cwd=ROOT)
+                                    ':(exclude)reproduction/configs/continual_1p5b_lsl_a10.json',
+                                    ':(exclude)reproduction/configs/continual_1p5b_pilot_seed123.json'],cwd=ROOT)
     assert not result

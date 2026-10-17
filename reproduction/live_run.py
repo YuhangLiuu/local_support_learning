@@ -7,13 +7,14 @@ import subprocess
 import sys
 
 
-def runtime_imports():
+def runtime_imports(include_lm_eval=True):
     import importlib
     import importlib.metadata as metadata
     expected={'transformers':'4.56.2','pomegranate':'1.1.2','lm-eval':'0.4.10'}
     report={}
     for module,package in [('transformers','transformers'),('tokenizers','tokenizers'),
                            ('huggingface_hub','huggingface-hub'),('pomegranate','pomegranate'),('lm_eval','lm-eval')]:
+        if module=='lm_eval' and not include_lm_eval:continue
         obj=importlib.import_module(module);dist=metadata.distribution(package)
         origin=Path(obj.__file__).resolve()
         if origin not in {Path(dist.locate_file(file)).resolve() for file in dist.files or []}:
@@ -54,6 +55,8 @@ def validate_artifacts(root, plan):
     checkpoints = []
     for stage, task in enumerate(plan['task_order']):
         record = records[stage]
+        if plan.get('launch_controls',{}).get('pilot') and record['lm_eval']:
+            raise ValueError('Pilot must not report general LM evaluation scores')
         epochs = plan['overrides']['ft_epochs_per_dataset'][task]
         if record['stage'] != stage or record['dataset'] != task:
             raise ValueError('stage/task identity mismatch')
@@ -98,7 +101,14 @@ def validate_artifacts(root, plan):
     expected_pos = sum(plan['overrides']['ft_epochs_per_dataset'][t] for t in plan['task_order'])
     if sum(f['which']=='neg' for f in fits)!=1 or sum(f['which']=='pos' for f in fits)!=expected_pos:
         raise ValueError('missing positive/negative GMM fit records')
-    if any(f['active_owner_ratio'] != 1 for f in fits):
+    if plan.get('launch_controls',{}).get('pilot'):
+        if any(not math.isfinite(f['active_owner_ratio']) or not 0 < f['active_owner_ratio'] <= 1 for f in fits):
+            raise ValueError('Pilot GMM has no active owners or invalid ratio')
+        if any(f.get('fit_tokens',0)<=0 or not isinstance(f.get('disabled_owners'),list) for f in fits):
+            raise ValueError('Pilot GMM token/owner records missing')
+        from reproduction.pilot_sampling import check_saved_manifest
+        check_saved_manifest(experiment/'sampling_manifest.json',plan)
+    elif any(f['active_owner_ratio'] != 1 for f in fits):
         raise ValueError('GMM fit disabled owner modules; inspect logs before accepting reproduction')
     return dict(stages=len(records),checkpoints=checkpoints,diagnostic_families=families,gmm_fits=len(fits))
 

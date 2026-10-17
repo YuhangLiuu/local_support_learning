@@ -34,9 +34,19 @@ def main():
     p.add_argument('--environment-report',help='optional strict PASS report from bootstrap; must match this interpreter/instance/profile')
     p.add_argument('--dry-run',action='store_true')
     p.add_argument('--preflight-only',action='store_true',help='strict GPU/resource/parity checks without reserving output or starting training')
+    p.add_argument('--sample-manifest',help='replay an immutable Pilot selection manifest')
     args=p.parse_args();plan=read_plan(args.config)
     config=resolve(plan,args.seed,args.microbatch,args.nproc,args.diagnostics)
     controls=plan.get('launch_controls',{})
+    if controls.get('pilot'):
+        from reproduction.pilot_sampling import validate_plan
+        try:validate_plan(plan,config)
+        except ValueError as error:p.error(str(error))
+        if args.sample_manifest and not Path(args.sample_manifest).is_file():p.error('Pilot sample manifest not found')
+        if args.sample_manifest:
+            from reproduction.pilot_sampling import check_saved_manifest
+            try:check_saved_manifest(args.sample_manifest,plan)
+            except (ValueError,KeyError,TypeError) as error:p.error(str(error))
     if controls.get('single_seed') is not None:
         if config.seed!=controls['single_seed'] or plan['seeds']!=[123] or args.nproc!=1 or config.local_batch_size!=1:
             p.error('this launch plan requires only seed 123, one GPU, microbatch 1')
@@ -53,7 +63,7 @@ def main():
                              accumulation=config.ft_global_batch_size//(config.local_batch_size*args.nproc)),
         resources=str(Path(args.resources).resolve()),cache_root=args.cache_root,output=str(root),
         start_time=datetime.now().strftime('%Y_%m_%d__%H_%M_%S'),core_hash=code_hash(),
-        eval_checkpoint=args.eval_checkpoint,environment_report=args.environment_report,pending_checks=['GPU','resource integrity','parity receipt','known issues'],
+        eval_checkpoint=args.eval_checkpoint,sample_manifest=str(Path(args.sample_manifest).resolve()) if args.sample_manifest else None,environment_report=args.environment_report,pending_checks=['GPU','resource integrity','parity receipt','known issues'],
         checkpoint_glob='experiment/checkpoints/cl_state_stage*_epoch*.pt')
     report['worker_command']=[sys.executable,'-m','torch.distributed.run',f'--nproc_per_node={args.nproc}',f'--master_port={args.master_port}',
                               '-m','reproduction.worker','--run-dir',str(root)]
@@ -79,7 +89,7 @@ def main():
         from reproduction.live_run import check_idle_nvidia,runtime_imports
         try:
             check_idle_nvidia()
-            report['runtime_imports']=runtime_imports()
+            report['runtime_imports']=runtime_imports() if not controls.get('pilot') else runtime_imports(include_lm_eval=False)
         except (ValueError,OSError,subprocess.SubprocessError) as error:p.error(str(error))
     disk_anchor=root.parent
     while not disk_anchor.exists():disk_anchor=disk_anchor.parent

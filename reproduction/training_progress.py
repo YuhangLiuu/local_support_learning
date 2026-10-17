@@ -22,11 +22,12 @@ def bounded_lm_loader(loader, batch_size):
 
 
 class TrainingProgress:
-    def __init__(self, train, root, torch):
+    def __init__(self, train, root, torch, gmm_details=False):
         self.train,self.root,self.torch = train,Path(root),torch
         self.stage=-1;self.epoch=-1;self.task=None;self.step=0;self.total=0
         self.epochs=0;self.steps_per_epoch=0;self.started=time.monotonic()
         self.originals={}
+        self.gmm_details=gmm_details
 
     def emit(self,event,**values):
         record=dict(event=event,stage=self.stage,epoch=self.epoch,dataset=self.task,
@@ -85,8 +86,22 @@ class TrainingProgress:
             @wraps(old)
             def wrapped(*args,**kwargs):
                 which=kwargs.get('which','pos');self.emit('gmm_start',which=which)
-                result=old(*args,**kwargs)
-                self.emit('gmm_complete',which=which,active_owner_ratio=float(result))
+                detail={};hook=None
+                if self.gmm_details:
+                    model=args[0];base=model.module if hasattr(model,'module') else model
+                    def tokens(module,inputs,keywords):
+                        batches=keywords.get('full_dataset_input',[])
+                        detail['fit_tokens']=sum(int(b['attention_mask'].sum()) for b in batches)
+                    hook=base.model.register_forward_pre_hook(tokens,with_kwargs=True)
+                try:result=old(*args,**kwargs)
+                finally:
+                    if hook:hook.remove()
+                if self.gmm_details:
+                    detail['disabled_owners']=[dict(owner=n,adapter=i) for n,m in base.named_modules()
+                        if getattr(m,'is_cl_memory_owner',False) for i,d in enumerate(m.is_disabled) if d]
+                    if not math.isfinite(float(result)) or not 0 < float(result) <= 1:
+                        raise ValueError('Pilot GMM has no active owners or invalid ratio')
+                self.emit('gmm_complete',which=which,active_owner_ratio=float(result),**detail)
                 return result
             return wrapped
         def evaluation(old):
