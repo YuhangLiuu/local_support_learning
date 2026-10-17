@@ -242,5 +242,10 @@ def test_pinned_revisions_and_algorithm_files_unchanged():
     now=json.loads((ROOT/'reproduction/resources.lock.json').read_text(encoding='utf-8'))
     assert [(r['repo_id'],r['revision'],r['files']) for r in old['resources']]==[(r['repo_id'],r['revision'],r['files']) for r in now['resources']]
     assert all('\\' not in r['local_path'] for r in now['resources'])
-    result=subprocess.check_output(['git','diff','44b2119','--','modeling_qwen2.py','cl_memory.py','diagnostics','reproduction/configs',':(exclude)reproduction/configs/smoke_1p5b.json'],cwd=ROOT)
+    # New experiment plans are intentionally additive; all existing plans and
+    # algorithm files remain covered by the immutability contract.
+    result=subprocess.check_output(['git','diff','44b2119','--','modeling_qwen2.py','cl_memory.py','diagnostics','reproduction/configs',
+                                    ':(exclude)reproduction/configs/smoke_1p5b.json',
+                                    ':(exclude)reproduction/configs/continual_1p5b_lsl.json',
+                                    ':(exclude)reproduction/configs/continual_1p5b_lsl_a10.json'],cwd=ROOT)
     assert not result

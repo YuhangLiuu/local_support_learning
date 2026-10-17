@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import math
 
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 from reproduction.configuration import read_plan,resolve,resources,local_resource,serialized
@@ -28,6 +29,46 @@ def run_worker(command,log_path,env):
 def geometry(config):
     return {k:getattr(config,k) for k in ('activate_cl_method','lora_r','lora_alpha','jl_k','gmm_n_pos_comps','gmm_n_neg_comps',
                                         'smoothing_alpha','use_grad_checkpointing')}
+
+
+def build_synthetic_probe(seed, count=1024):
+    """Deterministic, varied text pool used only by the parity worker.
+
+    It is intentionally larger than any small EM budget, so ``fit_cl_memory``
+    never cycles a tiny fixed set while collecting activations.  No noise is
+    added to activations or GMM inputs.
+    """
+    import random
+    rng=random.Random(seed)
+    alphabet=['amber','birch','cobalt','delta','ember','fjord','garnet','hazel',
+              'indigo','jasper','kelvin','lichen','mango','nickel','onyx','pearl']
+    rows=[]
+    for i in range(count):
+        length=8+(i % 29)
+        words=[alphabet[(i*17+j*7+rng.randrange(len(alphabet))) % len(alphabet)] for j in range(length)]
+        rows.append(f'probe sample {i:05d} seed {seed} variant {(i*i+11*i)%100003} ' + ' '.join(words))
+    return rows
+
+
+def synthetic_probe_stats(activations, components):
+    """Validate actual post-JL activation rows immediately before EM."""
+    import torch
+    x=activations.detach().float().reshape(-1,activations.shape[-1])
+    finite=bool(torch.isfinite(x).all())
+    unique=int(torch.unique(x,dim=0).shape[0]) if x.numel() else 0
+    variance=x.var(dim=0,unbiased=False) if x.shape[0] else torch.empty(0)
+    near_zero=int((variance <= 1e-12).sum()) if variance.numel() else 0
+    total=int(x.shape[0]);duplicate_ratio=1.0-(unique/max(total,1))
+    stats=dict(shape=list(x.shape),valid_tokens=total,unique_activation_rows=unique,
+               duplicate_ratio=duplicate_ratio,finite=finite,near_zero_variance_dims=near_zero,
+               gmm_components=int(components))
+    print('[PARITY GMM DATA] '+json.dumps(stats),flush=True)
+    if not finite:raise ValueError('GPU PARITY TEST DATA INVALID: NaN/Inf activation')
+    if unique < components:
+        raise ValueError('GPU PARITY TEST DATA INVALID\n\n'
+                         f'Unique activation rows: {unique}\nGMM components: {components}\n\n'
+                         'Synthetic probe diversity is insufficient for this GMM configuration.')
+    return stats
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
@@ -140,15 +181,28 @@ def main():
                                    every_n_forwards=1,max_tokens_per_batch=64),output/f'{args.worker}_diagnostics',f'parity_{args.worker}')
         if observer:observer.set_context(stage=stage,epoch=0,dataset='synthetic_gpu_probe',mode='train')
         return observer
-    lines=[' '.join(['probe',str(i),*['example '+str((i*j+13)%97) for j in range(40)]]) for i in range(32)]
+    lines=build_synthetic_probe(config.seed, count=max(1024, args.fit_tokens//16))
     fit=types.SimpleNamespace(gmm_fit_num_tokens=args.fit_tokens,seq_len_train=128,gmm_skip_on_fail=False)
     batch=tokenizer(lines[:1],return_tensors='pt',truncation=True,max_length=32,padding=True,add_special_tokens=False).to('cuda')
     batch['labels']=batch.input_ids.masked_fill(~batch.attention_mask.bool(),-100)
     def loader(negative=False):
         data=['generic reference '+s for s in lines] if negative else lines
+        # The pool is deliberately larger than the requested budget. A single
+        # iterator is shared with fit_cl_memory, so no batch is repeated.
         return iter((dict(text=data[i:i+4]),i+4>=len(data)) for i in range(0,len(data),4))
     gmm_kwargs=dict(pos_kwargs=dict(n_components=config.gmm_n_pos_comps,covariance_type='diag',random_state=config.gmm_seed),
                     neg_kwargs=dict(n_components=config.gmm_n_neg_comps,covariance_type='diag',random_state=config.gmm_seed+1))
+    import modeling_qwen2 as qwen_core
+    original_fit_layer=qwen_core.fit_layer_gmms
+    fit_stats=[]
+    def checked_fit_layer(layer, which='pos', skip_on_fail=False):
+        owners=[m for m in layer.modules() if isinstance(m,core.ConditionalLoRALinear)
+                and m.is_cl_memory_owner and m._pending_x]
+        components=config.gmm_n_neg_comps if which=='neg' else config.gmm_n_pos_comps
+        for module in owners:
+            fit_stats.append(synthetic_probe_stats(torch.vstack(module._pending_x),components))
+        return original_fit_layer(layer,which,skip_on_fail)
+    qwen_core.fit_layer_gmms=checked_fit_layer
     capture(model)
     for stage in (0,1):
         core.add_lora(model,r=config.lora_r,alpha=config.lora_alpha,gmm_kwargs=gmm_kwargs)
@@ -177,12 +231,15 @@ def main():
         assert torch.equal(expected,restored.logits.cpu())
         payload[f'{stage}/roundtrip']=dict(logits=restored.logits.cpu(),state=snapshot(model))
         del restored
+    qwen_core.fit_layer_gmms=original_fit_layer
     with torch.no_grad(),torch.amp.autocast('cuda',dtype=torch.bfloat16):
         cached=model(input_ids=batch.input_ids,attention_mask=batch.attention_mask,use_cache=True)
         cache=cached.past_key_values
         for step in range(2):
             cached=model(input_ids=torch.tensor([[42+step]],device='cuda'),attention_mask=torch.ones(1,batch.input_ids.shape[1]+step+1,device='cuda',dtype=torch.long),past_key_values=cache,use_cache=True)
             payload[f'cache/{step}']=dict(logits=cached.logits.cpu(),kv=[(c.keys.cpu(),c.values.cpu()) for c in cache.layers],state=snapshot(model))
+    payload['synthetic_probe_stats']=fit_stats
+    payload['synthetic_probe_seed']=config.seed
     torch.save(payload,output/f'{args.worker}.pt')
 
 if __name__=='__main__':main()
